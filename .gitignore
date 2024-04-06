@@ -1,6 +1,10 @@
 # Prerequisites
 *.d
 
+
+build/
+
+
 # Compiled Object files
 *.slo
 *.lo
@@ -85,5 +89,3 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
-
-build/
