@@ -1,8 +1,9 @@
-#ifndef FUNCTIONS_H
-#define FUNCTIONS_H
+#ifndef SHADOWS_H
+#define SHADOWS_H
 
 
 
+#include <opencv2/opencv.hpp>
 #include <vector>
 #include <string>
 
@@ -10,7 +11,7 @@
 std::vector<std::string> generatePlaceholder(int amount, int selected_encoding);
 
 // Declaration of generateShadows
-std::vector<std::string> generateShadows(int amount, int threshold, int selected_encoding);
+std::vector<std::string> generateShadows(int amount, int selected_encoding);
 
 
-#endif // FUNCTIONS_H
+#endif // SHADOWS_H

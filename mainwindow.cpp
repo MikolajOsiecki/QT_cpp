@@ -74,9 +74,13 @@ void MainWindow::on_btnGenerateShadows_clicked()
     QString ShadowsNumber = ui->txtNumberOfShadows->text();
     bool ok = false;
     int number = ShadowsNumber.toInt(&ok);
-    if (ok){
+    QString ShadowsThreshold = ui->txtShadowThreshold->text();
+    bool ok2 = false;
+    int threshold = ShadowsThreshold.toInt(&ok2);
+    if (ok && ok2){
         ok = number > 0 ;
-        if (ok){
+        ok2 = threshold >= 2;
+        if (ok && ok2){
 
             ui->listGeneratedSh->clear(); // Clear old shadows
 
@@ -92,10 +96,12 @@ void MainWindow::on_btnGenerateShadows_clicked()
         }
         else {
             ui->txtNumberOfShadows->setText("Must be >0");
+            ui->txtShadowThreshold->setText("Must be >=2");
         }
     }
     else{
         ui->txtNumberOfShadows->setText("Wrong number");
+        ui->txtShadowThreshold->setText("Wrong number");
     }
 }
 
