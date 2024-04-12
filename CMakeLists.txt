@@ -12,6 +12,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
+# Find OpenCV components
+find_package(OpenCV REQUIRED)
+
+# Include the OpenCV directories
+include_directories(${OpenCV_INCLUDE_DIRS})
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
@@ -45,7 +50,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(QT_cpp PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(QT_cpp PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${OpenCV_LIBS})
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

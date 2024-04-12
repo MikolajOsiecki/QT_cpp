@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "functions.h"
-
+#include <opencv2/highgui/highgui.hpp>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -102,20 +102,27 @@ void MainWindow::on_btnGenerateShadows_clicked()
 
 void MainWindow::on_btnSelectImage_clicked()
 {
-    QString filename = QFileDialog::getOpenFileName(this, tr("Choose file"), "");
+    QString filename = QFileDialog::getOpenFileName(this, tr("Choose file"), "", tr("Images (*.png *.jpg *.jpeg *.bmp)"));
     if (QString::compare(filename, QString()) != 0 )
     {
-        QImage image;
-        bool valid = image.load(filename);
+        // Load the image using OpenCV
+        loadedImage = cv::imread(filename.toStdString(), cv::IMREAD_COLOR);
 
-        if (valid)
+        if (!loadedImage.empty())
         {
-            image = image.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            ui->picSelected->setPixmap(QPixmap::fromImage(image));
+            // Display the image using OpenCV in a separate window
+            cv::namedWindow("Selected Image", cv::WINDOW_AUTOSIZE); // Create a window for display.
+            cv::imshow("Selected Image", loadedImage); // Show our image inside it.
+
+            // Optionally, you can convert the cv::Mat to QImage and then display it in the Qt widget as before.
+            // This step requires conversion from cv::Mat to QImage.
+            QImage qimg(loadedImage.data, loadedImage.cols, loadedImage.rows, loadedImage.step, QImage::Format_RGB888);
+            qimg = qimg.rgbSwapped(); // Convert BGR to RGB
+            ui->picSelected->setPixmap(QPixmap::fromImage(qimg.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
         }
         else
         {
-
+            // Handle the invalid image case
         }
     }
 }

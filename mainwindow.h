@@ -6,6 +6,7 @@
 #include <QFileDialog>
 #include <QImage>
 #include <QPixmap>
+#include <opencv2/core/mat.hpp> // Make sure to include the necessary header for cv::Mat
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -34,5 +35,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    cv::Mat loadedImage; // Declare the cv::Mat variable here
+
 };
 #endif // MAINWINDOW_H
