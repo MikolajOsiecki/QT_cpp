@@ -5,13 +5,9 @@
 
 #include <opencv2/opencv.hpp>
 #include <vector>
-#include <string>
 
-// Declaration of generatePlaceholder
-std::vector<std::string> generatePlaceholder(int amount, int selected_encoding);
+std::vector<cv::Mat> createShares(const cv::Mat& secretImage, int n, int k);
 
-// Declaration of generateShadows
-std::vector<std::string> generateShadows(int amount, int selected_encoding);
-
+cv::Mat decodeShares(const std::vector<cv::Mat>& shares, int k);
 
 #endif // SHADOWS_H

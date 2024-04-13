@@ -33,9 +33,12 @@ private slots:
 
     void on_btnSelectImage_clicked();
 
+    void on_btnDecode_clicked();
+
 private:
     Ui::MainWindow *ui;
-    cv::Mat loadedImage; // Declare the cv::Mat variable here
-
+    cv::Mat loadedImage;
+    std::vector<cv::Mat> generatedShadows; // Hold the generated shadow images
+    int shadowsThreshold;
 };
 #endif // MAINWINDOW_H

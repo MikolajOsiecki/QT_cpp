@@ -76,32 +76,23 @@ void MainWindow::on_btnGenerateShadows_clicked()
     int number = ShadowsNumber.toInt(&ok);
     QString ShadowsThreshold = ui->txtShadowThreshold->text();
     bool ok2 = false;
-    int threshold = ShadowsThreshold.toInt(&ok2);
-    if (ok && ok2){
-        ok = number > 0 ;
-        ok2 = threshold >= 2;
-        if (ok && ok2){
+    shadowsThreshold = ShadowsThreshold.toInt(&ok2);
 
-            ui->listGeneratedSh->clear(); // Clear old shadows
+    if (ok && ok2 && number > 0 && shadowsThreshold >= 2) {
+        ui->listGeneratedSh->clear();  // Clear old shadows
 
-            int CurrentIndex = ui->comboEncodingType->currentIndex(); // Read encoding type from widget
-            std::vector<std::string> GeneratedShadows(number);
-            GeneratedShadows = generateShadows(number, CurrentIndex); // Generate shadows
+        int CurrentIndex = ui->comboEncodingType->currentIndex();  // Read encoding type from widget
 
-            // Adding each shadow to the QListWidget
-            for (const auto& shadow : GeneratedShadows) {
-                QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow), ui->listGeneratedSh);
-                ui->listGeneratedSh->addItem(newItem); // Optional here
-            }
+        auto [GeneratedShadows, GeneratedShadowStrings] = generateShadows(loadedImage, number, shadowsThreshold, CurrentIndex);  // Generate shadows and convert to strings
+        generatedShadows = GeneratedShadows;
+        // Adding each shadow string to the QListWidget
+        for (const auto& shadow : GeneratedShadowStrings) {
+            QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow), ui->listGeneratedSh);
+            ui->listGeneratedSh->addItem(newItem);
         }
-        else {
-            ui->txtNumberOfShadows->setText("Must be >0");
-            ui->txtShadowThreshold->setText("Must be >=2");
-        }
-    }
-    else{
-        ui->txtNumberOfShadows->setText("Wrong number");
-        ui->txtShadowThreshold->setText("Wrong number");
+    } else {
+        ui->txtNumberOfShadows->setText(ok ? "Must be >0" : "Wrong number");
+        ui->txtShadowThreshold->setText(ok2 ? "Must be >=2" : "Wrong number");
     }
 }
 
@@ -116,12 +107,6 @@ void MainWindow::on_btnSelectImage_clicked()
 
         if (!loadedImage.empty())
         {
-            // Display the image using OpenCV in a separate window
-            cv::namedWindow("Selected Image", cv::WINDOW_AUTOSIZE); // Create a window for display.
-            cv::imshow("Selected Image", loadedImage); // Show our image inside it.
-
-            // Optionally, you can convert the cv::Mat to QImage and then display it in the Qt widget as before.
-            // This step requires conversion from cv::Mat to QImage.
             QImage qimg(loadedImage.data, loadedImage.cols, loadedImage.rows, loadedImage.step, QImage::Format_RGB888);
             qimg = qimg.rgbSwapped(); // Convert BGR to RGB
             ui->picSelected->setPixmap(QPixmap::fromImage(qimg.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
@@ -132,3 +117,18 @@ void MainWindow::on_btnSelectImage_clicked()
         }
     }
 }
+
+void MainWindow::on_btnDecode_clicked() {
+    for (const auto& shadow : generatedShadows) {
+        // print the shadow
+        std::cout << shadow.size() << std::endl;
+    }
+    cv::Mat reconstructed = reconstructImage(generatedShadows, shadowsThreshold);
+
+    // Convert the cv::Mat to QImage for display (assuming the Mat is in grayscale)
+    QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
+
+    // Display the QImage in a QLabel or other suitable Qt widget
+    ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+}
+

@@ -91,3 +91,7 @@ compile_commands.json
 *_qmlcache.qrc
 *.user
 *.user
+.vscode/settings.json
+CMakeLists.txt.user
+.vscode/c_cpp_properties.json
+CMakeLists.txt.user
