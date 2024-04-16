@@ -95,3 +95,4 @@ compile_commands.json
 CMakeLists.txt.user
 .vscode/c_cpp_properties.json
 CMakeLists.txt.user
+*.user
