@@ -100,15 +100,15 @@ void MainWindow::on_btnGenerateShadows_clicked()
 void MainWindow::on_btnSelectImage_clicked()
 {
     QString filename = QFileDialog::getOpenFileName(this, tr("Choose file"), "", tr("Images (*.png *.jpg *.jpeg *.bmp)"));
-    if (QString::compare(filename, QString()) != 0 )
+    if (QString::compare(filename, QString()) != 0)
     {
-        // Load the image using OpenCV
-        loadedImage = cv::imread(filename.toStdString(), cv::IMREAD_COLOR);
+        // Load the image using OpenCV in grayscale
+        loadedImage = cv::imread(filename.toStdString(), cv::IMREAD_GRAYSCALE);
 
         if (!loadedImage.empty())
         {
-            QImage qimg(loadedImage.data, loadedImage.cols, loadedImage.rows, loadedImage.step, QImage::Format_RGB888);
-            qimg = qimg.rgbSwapped(); // Convert BGR to RGB
+            // Since the image is grayscale, each pixel is represented by a single byte.
+            QImage qimg(loadedImage.data, loadedImage.cols, loadedImage.rows, loadedImage.step, QImage::Format_Grayscale8);
             ui->picSelected->setPixmap(QPixmap::fromImage(qimg.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
         }
         else
@@ -124,7 +124,7 @@ void MainWindow::on_btnDecode_clicked() {
         std::cout << shadow.size() << std::endl;
     }
     cv::Mat reconstructed = reconstructImage(generatedShadows, shadowsThreshold);
-
+    cv::imshow("org", loadedImage);
     // Convert the cv::Mat to QImage for display (assuming the Mat is in grayscale)
     QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
 
