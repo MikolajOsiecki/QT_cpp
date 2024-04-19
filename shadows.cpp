@@ -1,7 +1,7 @@
 #include "shadows.h"
 #include <random>
-#include <iostream>
-#include <fstream>
+// #include <iostream>
+// #include <fstream>
 
 /**
  * Creates n shares from a secret image, where any k shares can be used to reconstruct the image.
@@ -18,9 +18,6 @@ std::vector<cv::Mat> createShares(const cv::Mat& secretImage, int n, int k) {
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    std::ofstream debugFile("debug_output.txt");  // Open a file for debug output
-
-    debugFile << "Processing image with dimensions: " << secretImage.rows << "x" << secretImage.cols << std::endl;
     for (int y = 0; y < secretImage.rows; y++) {
         for (int x = 0; x < secretImage.cols; x++) {
             std::vector<int> coefficients;
@@ -33,30 +30,14 @@ std::vector<cv::Mat> createShares(const cv::Mat& secretImage, int n, int k) {
             for (int i = 0; i < n; i++) {
                 int base = 1; // Start with x^0
                 int shareValue = 0;
+                int xi = i + 1;  // x values as i+1, where i is the index of the share
                 for (int j = 0; j < k; j++) {
                     shareValue = (shareValue + coefficients[j] * base) % 256;
-                    base = (base * (i + 1)) % 256; // Next power of x
+                    base = (base * xi) % 256; // Next power of x
                 }
                 shares[i].at<uchar>(y, x) = static_cast<uchar>(shareValue);
-                debugFile << "Pixel (" << y << ", " << x << ") in share " << i << " set to " << shareValue << std::endl;
             }
         }
-    }
-
-    debugFile.close(); // Make sure to close the file
-
-    // Save shares to separate text files
-    for (int i = 0; i < n; i++) {
-        std::ofstream shareFile("share" + std::to_string(i) + ".txt");
-        for (int y = 0; y < shares[i].rows; y++) {
-            for (int x = 0; x < shares[i].cols; x++) {
-                shareFile << (int)shares[i].at<uchar>(y, x);
-                if (x < shares[i].cols - 1) shareFile << ", "; // Separate columns by commas
-            }
-            shareFile << std::endl; // New line for each row
-        }
-        shareFile.close();
-        std::cout << "Share " << i << " saved to share" << std::to_string(i) << ".txt" << std::endl;
     }
 
     return shares;
@@ -88,12 +69,17 @@ double lagrangeInterpolate(const std::vector<int>& xs, const std::vector<double>
  * @return The reconstructed secret image as a Mat object.
  */
 cv::Mat decodeShares(const std::vector<cv::Mat>& shares, int k) {
+    std::cout << "k: " << k << std::endl;
+    for (const auto& shadow : shares) {
+        // print the shadow
+        std::cout << shadow.size() << std::endl;
+    }
     assert(!shares.empty() && shares.size() >= k);
     cv::Mat reconstructed = cv::Mat::zeros(shares[0].size(), shares[0].type());
 
     std::vector<int> xs(k);
     for (int i = 0; i < k; ++i) {
-        xs[i] = i + 1;  // X values at which the polynomial is evaluated
+        xs[i] = i + 1;  // Same x values as in the share creation, i+1 for share index i
     }
 
     for (int y = 0; y < reconstructed.rows; y++) {
