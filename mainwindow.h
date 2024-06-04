@@ -39,6 +39,12 @@ private slots:
 
     void on_listSelectedSh_itemDoubleClicked(QListWidgetItem *item);
 
+    void on_actionHelp_triggered();
+
+    void on_actionAbout_Gui_triggered();
+
+    void on_actionAuthor_triggered();
+
 private:
     Ui::MainWindow *ui;
     cv::Mat loadedImage;

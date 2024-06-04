@@ -8,6 +8,19 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    // Define the stylesheet
+    QString styleSheet = "QMainWindow { background-color: lightgray; color: black; }"
+                         "QWidget { background-color: lightblue; color: black; }"
+                         "QPushButton { background-color: lightblue; color: black; }"
+                         "QLineEdit { background-color: lightblue; color: black; }"
+                         "QLabel { background-color: lightblue; color: black; }"
+                         "QListWidget { background-color: lightblue; color: black; }"
+                         "QComboBox { background-color: lightblue; color: black; }"
+                         "QTextEdit { background-color: lightblue; color: black; }";
+                         // "QMenuBar { background-color: lightgray; color: black; }";
+
+    // Set the stylesheet to the main window
+    this->setStyleSheet(styleSheet);
 }
 
 MainWindow::~MainWindow()
@@ -113,9 +126,9 @@ void MainWindow::on_btnGenerateShadows_clicked()
     if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2) {
         ui->listGeneratedSh->clear();  // Clear old shadows
 
-        int CurrentIndex = ui->comboEncodingType->currentIndex();  // Read encoding type from widget
+        // int CurrentIndex = ui->comboEncodingType->currentIndex();  // Read encoding type from widget
 
-        auto [GeneratedShadows, GeneratedShadowStrings] = generateShadows(loadedImage, shadowsAmount, shadowsThreshold, CurrentIndex);  // Generate shadows and convert to strings
+        auto [GeneratedShadows, GeneratedShadowStrings] = generateShadows(loadedImage, shadowsAmount, shadowsThreshold);  // Generate shadows and convert to strings
         generatedShadows = GeneratedShadows;
 
         // Adding each shadow string to the QListWidget
@@ -195,4 +208,34 @@ void MainWindow::on_listSelectedSh_itemDoubleClicked(QListWidgetItem *item)
     } else {
         QMessageBox::warning(this, "Error", "Invalid share index.");
     }
+}
+
+////////////////////////////////////////////
+// Menu bar actions
+////////////////////////////////////////////
+
+
+void MainWindow::on_actionHelp_triggered()
+{
+    //TODO: Implement help dialog
+}
+
+
+void MainWindow::on_actionAuthor_triggered()
+{
+    QMessageBox::information(this, "About Author", "This GUI was created by <b>inż. Mikołaj Osiecki</b> <i>mdosiecki@gmail.com</i> for the purpose of the master thesis" 
+    "<br>"
+    "<b>Scalable and multi-level algorithms for secret image data sharing</b>"
+    "<br>"
+    "at the"
+    "<br>"
+    "<b>AGH University of Krakow, Faculty of Electrical Engineering, Automatics, Computer Science and Biomedical Engineering</b>"
+    "<br>"
+    "Supervisor: <b>Prof Dr. Marek R. Ogiela</b>");
+}
+
+
+void MainWindow::on_actionAbout_Gui_triggered()
+{
+    QApplication::aboutQt();
 }

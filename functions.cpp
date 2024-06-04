@@ -47,7 +47,7 @@ std::vector<std::string> sharesToStrings(const std::vector<cv::Mat>& shares) {
 }
 
 
-std::pair<std::vector<cv::Mat>, std::vector<std::string>> generateShadows(const cv::Mat& secretImage, int amount, int threshold, int selected_encoding) {
+std::pair<std::vector<cv::Mat>, std::vector<std::string>> generateShadows(const cv::Mat& secretImage, int amount, int threshold) {
     auto shares = createShares(secretImage, amount, threshold); // Create shares from the image
     auto shareStrings = sharesToStrings(shares);                // Convert shares to strings
     return {shares, shareStrings};                              // Return both shares and their string representations
