@@ -10,13 +10,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     // Define the stylesheet
     QString styleSheet = "QMainWindow { background-color: lightgray; color: black; }"
-                         "QWidget { background-color: lightblue; color: black; }"
-                         "QPushButton { background-color: lightblue; color: black; }"
-                         "QLineEdit { background-color: lightblue; color: black; }"
-                         "QLabel { background-color: lightblue; color: black; }"
-                         "QListWidget { background-color: lightblue; color: black; }"
-                         "QComboBox { background-color: lightblue; color: black; }"
-                         "QTextEdit { background-color: lightblue; color: black; }";
+                         "QWidget { background-color: lightgray; color: black; }"
+                         "QPushButton { background-color: lightgray; color: black; }"
+                         "QLineEdit { background-color: lightgray; color: black; }"
+                         "QLabel { background-color: lightgray; color: black; }"
+                         "QListWidget { background-color: lightgray; color: black; }"
+                         "QComboBox { background-color: lightgray; color: black; }"
+                         "QTextEdit { background-color: lightgray; color: black; }";
                          // "QMenuBar { background-color: lightgray; color: black; }";
 
     // Set the stylesheet to the main window
