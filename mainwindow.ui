@@ -17,14 +17,19 @@
    <widget class="QPushButton" name="btnGenerateShadows">
     <property name="geometry">
      <rect>
-      <x>590</x>
-      <y>440</y>
-      <width>111</width>
-      <height>24</height>
+      <x>580</x>
+      <y>380</y>
+      <width>131</width>
+      <height>41</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <pointsize>16</pointsize>
+     </font>
+    </property>
     <property name="text">
-     <string>Generate Shadows</string>
+     <string>Generate</string>
     </property>
    </widget>
    <widget class="QLabel" name="picSelected">
@@ -35,6 +40,9 @@
       <width>531</width>
       <height>441</height>
      </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::NoFrame</enum>
     </property>
     <property name="text">
      <string/>
@@ -52,6 +60,9 @@
       <height>441</height>
      </rect>
     </property>
+    <property name="frameShape">
+     <enum>QFrame::NoFrame</enum>
+    </property>
     <property name="text">
      <string/>
     </property>
@@ -59,44 +70,19 @@
      <pixmap>C:/Users/Nosfreat/Desktop/voucher kurs fotografii 2024 Paweł Sieciński.jpg</pixmap>
     </property>
    </widget>
-   <widget class="QComboBox" name="comboEncodingType">
-    <property name="geometry">
-     <rect>
-      <x>610</x>
-      <y>410</y>
-      <width>72</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <item>
-     <property name="text">
-      <string>Type1</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Type2</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Type3</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Type4</string>
-     </property>
-    </item>
-   </widget>
    <widget class="QLineEdit" name="txtNumberOfShadows">
     <property name="geometry">
      <rect>
-      <x>590</x>
-      <y>380</y>
-      <width>113</width>
-      <height>24</height>
+      <x>582</x>
+      <y>258</y>
+      <width>129</width>
+      <height>32</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>16</pointsize>
+     </font>
     </property>
     <property name="text">
      <string/>
@@ -104,31 +90,26 @@
     <property name="frame">
      <bool>true</bool>
     </property>
+    <property name="placeholderText">
+     <string>k</string>
+    </property>
     <property name="clearButtonEnabled">
      <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>590</x>
-      <y>360</y>
-      <width>111</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Number of Shadows</string>
     </property>
    </widget>
    <widget class="QPushButton" name="btnSelectImage">
     <property name="geometry">
      <rect>
-      <x>600</x>
+      <x>580</x>
       <y>80</y>
-      <width>91</width>
-      <height>24</height>
+      <width>131</width>
+      <height>41</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>16</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>Select Image</string>
@@ -155,6 +136,11 @@
       <layout class="QVBoxLayout" name="ShadowsMoveGroup">
        <item>
         <widget class="QPushButton" name="btnSelectShadows">
+         <property name="font">
+          <font>
+           <pointsize>16</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>Select</string>
          </property>
@@ -162,6 +148,11 @@
        </item>
        <item>
         <widget class="QPushButton" name="btnMoveBack">
+         <property name="font">
+          <font>
+           <pointsize>16</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>Move back</string>
          </property>
@@ -169,6 +160,11 @@
        </item>
        <item>
         <widget class="QPushButton" name="btnClear">
+         <property name="font">
+          <font>
+           <pointsize>16</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>Clear</string>
          </property>
@@ -185,6 +181,84 @@
      </item>
     </layout>
    </widget>
+   <widget class="QLineEdit" name="txtShadowThreshold">
+    <property name="geometry">
+     <rect>
+      <x>582</x>
+      <y>296</y>
+      <width>129</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>16</pointsize>
+     </font>
+    </property>
+    <property name="placeholderText">
+     <string>n</string>
+    </property>
+    <property name="clearButtonEnabled">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnDecode">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>422</y>
+      <width>131</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>16</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Decode</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="txtNumberOfEssential">
+    <property name="geometry">
+     <rect>
+      <x>582</x>
+      <y>220</y>
+      <width>129</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>16</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="placeholderText">
+     <string>s</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="txtEssentialThreshold">
+    <property name="geometry">
+     <rect>
+      <x>582</x>
+      <y>182</y>
+      <width>129</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>16</pointsize>
+     </font>
+    </property>
+    <property name="placeholderText">
+     <string>t</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -192,22 +266,41 @@
      <x>0</x>
      <y>0</y>
      <width>1293</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+    <addaction name="actionAuthor"/>
+    <addaction name="actionAbout_Gui"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionHelp"/>
+   </widget>
+   <addaction name="menuAbout"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <widget class="QToolBar" name="toolBar">
-   <property name="windowTitle">
-    <string>toolBar</string>
+  <action name="actionAuthor">
+   <property name="text">
+    <string>Author</string>
    </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-  </widget>
+  </action>
+  <action name="actionAbout_Gui">
+   <property name="text">
+    <string>About Gui</string>
+   </property>
+  </action>
+  <action name="actionHelp">
+   <property name="text">
+    <string>Help</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
