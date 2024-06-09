@@ -14,6 +14,12 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+struct Shadow {
+    cv::Mat image;  // The shadow image
+    bool isEssential; // Flag to indicate if the shadow is essential
+    std::string text; // Text representation of the shadow
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -48,8 +54,10 @@ private slots:
 private:
     Ui::MainWindow *ui;
     cv::Mat loadedImage;
-    std::vector<cv::Mat> generatedShadows; // Hold the generated shadow images
-    std::vector<cv::Mat> selectedShadows; // Hold the generated shadow images
+    std::vector<Shadow> generatedShadows; // Hold the generated shadow images and their importance
+    std::vector<Shadow> selectedShadows;  // Hold the selected shadow images and their importance
+    std::vector<std::string> generatedShadowsStrings; // Hold the generated shadow images as strings
+    std::vector<std::string> selectedShadowsStrings;  // Hold the selected shadow images as strings
     int shadowsThreshold;
     int shadowsAmount;
 };

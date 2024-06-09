@@ -1,6 +1,9 @@
 #include "functions.h"
-#include <utility>
-#include "shadows.h"
+#include "mainwindow.h"
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <string>
+#include <iostream>
 
 
 std::vector<std::string> generatePlaceholder(int amount, int selected_encoding) {
@@ -14,46 +17,40 @@ std::vector<std::string> generatePlaceholder(int amount, int selected_encoding) 
 }
 
 
-std::string pixelToBase36(unsigned char value) {
-    const char* digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+// Function to convert a shadow image to a string of size 50
+std::string convertImageToString(const cv::Mat& image) {
+    const std::string charset = "0123456789abcdefghijklmnopqrstuvwxyz";
+    const int charsetSize = charset.size();
     std::string result;
-    do {
-        result = digits[value % 36] + result;
-        value /= 36;
-    } while (value != 0);
+    result.reserve(50);
+
+    // We will take the first 50 pixels from the image in row-major order
+    int count = 0;
+    for (int i = 0; i < image.rows && count < 100; ++i) {
+        for (int j = 0; j < image.cols && count < 100; ++j) {
+            int pixelValue = image.at<uchar>(i, j);
+            char charValue = charset[pixelValue * charsetSize / 256];
+            result += charValue;
+            ++count;
+        }
+    }
+
+    // If the image has less than 50 pixels, pad the result with '0'
+    while (result.size() < 50) {
+        result += '0';
+    }
+
     return result;
 }
 
 
-std::vector<std::string> sharesToStrings(const std::vector<cv::Mat>& shares) {
-    std::vector<std::string> shareStrings;
-    for (const auto& share : shares) {
-        std::string shareData;
-        for (int y = 0; y < share.rows; y++) {
-            for (int x = 0; x < share.cols; x++) {
-                uchar pixelValue = share.at<uchar>(y, x);
-                shareData += pixelToBase36(pixelValue); // Convert each pixel value to base36 and append
-                // Check if the current string length has reached the maximum allowed length
-                if (shareData.length() >= 200) {
-                    shareData.resize(200); // Resize to 200 characters to meet the requirement
-                    break;
-                }
-            }
-            if (shareData.length() >= 200) break;
-        }
-        shareStrings.push_back(shareData);
+// Function to process a vector of Shadow objects and update their text fields
+void convertShadowsToStr(std::vector<Shadow>& shadows) {
+    for (auto& shadow : shadows) {
+        shadow.text = convertImageToString(shadow.image);
     }
-    return shareStrings;
 }
 
 
-std::pair<std::vector<cv::Mat>, std::vector<std::string>> generateShadows(const cv::Mat& secretImage, int amount, int threshold) {
-    auto shares = createShares(secretImage, amount, threshold); // Create shares from the image
-    auto shareStrings = sharesToStrings(shares);                // Convert shares to strings
-    return {shares, shareStrings};                              // Return both shares and their string representations
-}
 
 
-cv::Mat reconstructImage(const std::vector<cv::Mat> shadows, int threshold){
-    return decodeShares(shadows, threshold);
-}

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "functions.h"
+#include "thien_lin_shadows.h"
 #include <opencv2/highgui/highgui.hpp>
 #include <QMessageBox>  // Ensure to include QMessageBox
 MainWindow::MainWindow(QWidget *parent)
@@ -14,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
                          "QPushButton { background-color: lightgray; color: black; }"
                          "QLineEdit { background-color: lightgray; color: black; }"
                          "QLabel { background-color: lightgray; color: black; }"
-                         "QListWidget { background-color: lightgray; color: black; }"
+                         "QListWidget { background-color: white; color: black; }"
                          "QComboBox { background-color: lightgray; color: black; }"
                          "QTextEdit { background-color: lightgray; color: black; }";
                          // "QMenuBar { background-color: lightgray; color: black; }";
@@ -52,6 +53,8 @@ void MainWindow::on_btnClear_clicked()
             selectedShadows.erase(selectedShadows.begin());
         }
     }
+        std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
+        std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
 }
 
 
@@ -78,6 +81,10 @@ void MainWindow::on_btnMoveBack_clicked()
         // Also remove the corresponding cv::Mat and X value from selectedShadows and selectedXValues
         selectedShadows.erase(selectedShadows.begin() + index);
     }
+        std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
+                std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+
+
 }
 
 
@@ -104,6 +111,10 @@ void MainWindow::on_btnSelectShadows_clicked()
         // Also remove the corresponding cv::Mat and X value from generatedShadows and generatedXValues
         generatedShadows.erase(generatedShadows.begin() + index);
     }
+            std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
+                    std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+
+
 }
 
 
@@ -116,29 +127,34 @@ void MainWindow::on_btnGenerateShadows_clicked()
     QString ShadowsThreshold = ui->txtShadowThreshold->text();
     bool ok2 = false;
     shadowsThreshold = ShadowsThreshold.toInt(&ok2);
-    std::cout << "shadowsThreshold: " << shadowsThreshold << std::endl;
+    // std::cout << "shadowsThreshold: " << shadowsThreshold << std::endl;
     // Check if loadedImage is empty
     if (loadedImage.empty()) {
         QMessageBox::warning(this, "Error", "No image loaded or image is empty.");
         return;  // Stop execution of the function if image is not loaded
     }
 
-    if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2) {
+    if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
         ui->listGeneratedSh->clear();  // Clear old shadows
 
-        // int CurrentIndex = ui->comboEncodingType->currentIndex();  // Read encoding type from widget
 
-        auto [GeneratedShadows, GeneratedShadowStrings] = generateShadows(loadedImage, shadowsAmount, shadowsThreshold);  // Generate shadows and convert to strings
-        generatedShadows = GeneratedShadows;
+        generatedShadows = generateShadowsTL(loadedImage, shadowsThreshold, shadowsAmount);
+        convertShadowsToStr(generatedShadows);
+        // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
 
-        // Adding each shadow string to the QListWidget
-        for (const auto& shadow : GeneratedShadowStrings) {
-            QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow), ui->listGeneratedSh);
+        // Add each shadow string to the QListWidget
+        for (const auto& shadow : generatedShadows) {
+            QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
+
+            if (shadow.isEssential) {
+                newItem->setBackground(Qt::red);  // Set background color to red
+            }
+
             ui->listGeneratedSh->addItem(newItem);
         }
-    } else {
-        ui->txtNumberOfShadows->setText(ok ? "Must be >0" : "Wrong number");
-        ui->txtShadowThreshold->setText(ok2 ? "Must be >=2" : "Wrong number");
+    }
+    else {
+        QMessageBox::warning(this, "Error", "Invalid tskn parameters!");
     }
 }
 
@@ -172,16 +188,16 @@ void MainWindow::on_btnDecode_clicked() {
     }
     for (const auto& shadow : selectedShadows) {
         // print the shadow
-        std::cout << shadow.size() << std::endl;
+        // std::cout << shadow.size() << std::endl;
     }
     std::cout << "shadowsThreshold: " << shadowsThreshold << std::endl;
-    cv::Mat reconstructed = reconstructImage(selectedShadows, shadowsThreshold);
+    // cv::Mat reconstructed = reconstructImage(selectedShadows, shadowsThreshold);
     // cv::imshow("org", loadedImage);
     // Convert the cv::Mat to QImage for display (assuming the Mat is in grayscale)
-    QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
+    // QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
 
     // Display the QImage in a QLabel or other suitable Qt widget
-    ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+    // ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
 }
 
 
@@ -190,8 +206,8 @@ void MainWindow::on_listGeneratedSh_itemDoubleClicked(QListWidgetItem *item)
     int index = ui->listGeneratedSh->row(item);
     // Check if the index is within the valid range of generatedShadows
     if (index >= 0 && index < generatedShadows.size()) {
-        cv::Mat share = generatedShadows[index];
-        cv::imshow("Share Display", share);
+        // cv::Mat share = generatedShadows[index].image;
+        cv::imshow("Share Display", generatedShadows[index].image);
     } else {
         QMessageBox::warning(this, "Error", "Invalid share index.");
     }
@@ -203,8 +219,8 @@ void MainWindow::on_listSelectedSh_itemDoubleClicked(QListWidgetItem *item)
     int index = ui->listSelectedSh->row(item);
     // Check if the index is within the valid range of generatedShadows
     if (index >= 0 && index < selectedShadows.size()) {
-        cv::Mat share = selectedShadows[index];
-        cv::imshow("Share Display", share);
+        // cv::Mat share = selectedShadows[index].image;
+        cv::imshow("Share Display", selectedShadows[index].image);
     } else {
         QMessageBox::warning(this, "Error", "Invalid share index.");
     }
