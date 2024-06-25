@@ -73,9 +73,9 @@
    <widget class="QLineEdit" name="txtNumberOfShadows">
     <property name="geometry">
      <rect>
-      <x>582</x>
-      <y>258</y>
-      <width>129</width>
+      <x>581</x>
+      <y>297</y>
+      <width>131</width>
       <height>32</height>
      </rect>
     </property>
@@ -91,7 +91,7 @@
      <bool>true</bool>
     </property>
     <property name="placeholderText">
-     <string>k</string>
+     <string>n</string>
     </property>
     <property name="clearButtonEnabled">
      <bool>true</bool>
@@ -184,9 +184,9 @@
    <widget class="QLineEdit" name="txtShadowThreshold">
     <property name="geometry">
      <rect>
-      <x>582</x>
-      <y>296</y>
-      <width>129</width>
+      <x>581</x>
+      <y>259</y>
+      <width>131</width>
       <height>32</height>
      </rect>
     </property>
@@ -196,7 +196,7 @@
      </font>
     </property>
     <property name="placeholderText">
-     <string>n</string>
+     <string>k</string>
     </property>
     <property name="clearButtonEnabled">
      <bool>true</bool>
@@ -223,9 +223,9 @@
    <widget class="QLineEdit" name="txtNumberOfEssential">
     <property name="geometry">
      <rect>
-      <x>582</x>
-      <y>220</y>
-      <width>129</width>
+      <x>581</x>
+      <y>221</y>
+      <width>131</width>
       <height>32</height>
      </rect>
     </property>
@@ -244,9 +244,9 @@
    <widget class="QLineEdit" name="txtEssentialThreshold">
     <property name="geometry">
      <rect>
-      <x>582</x>
-      <y>182</y>
-      <width>129</width>
+      <x>581</x>
+      <y>183</y>
+      <width>131</width>
       <height>32</height>
      </rect>
     </property>

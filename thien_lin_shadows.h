@@ -1,0 +1,11 @@
+#ifndef THIEN_LIN_SHADOWS_H
+#define THIEN_LIN_SHADOWS_H
+
+#include "mainwindow.h"
+#include <opencv2/opencv.hpp>
+#include <vector>
+
+std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N);
+cv::Mat decodeShadowsTL(const std::vector<Shadow>& selectedShadows, int K);
+
+#endif // THIEN_LIN_SHADOWS_H
