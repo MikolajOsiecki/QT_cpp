@@ -6,8 +6,6 @@
 #include <vector>
 
 std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N);
-
-void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows);
-
+cv::Mat decodeShadowsTL(const std::vector<Shadow>& selectedShadows, int K);
 
 #endif // THIEN_LIN_SHADOWS_H

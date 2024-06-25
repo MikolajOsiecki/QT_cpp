@@ -118,7 +118,6 @@ void MainWindow::on_btnSelectShadows_clicked()
 }
 
 
-
 void MainWindow::on_btnGenerateShadows_clicked()
 {
     QString ShadowsNumber = ui->txtNumberOfShadows->text();
@@ -136,7 +135,9 @@ void MainWindow::on_btnGenerateShadows_clicked()
 
     if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
         ui->listGeneratedSh->clear();  // Clear old shadows
-
+        ui->listSelectedSh->clear();  // Clear selected shadows
+        generatedShadows.clear(); // Clear the selectedShadows vector
+        selectedShadows.clear(); // Clear the selectedShadows vector
 
         generatedShadows = generateShadowsTL(loadedImage, shadowsThreshold, shadowsAmount);
         convertShadowsToStr(generatedShadows);
@@ -159,6 +160,23 @@ void MainWindow::on_btnGenerateShadows_clicked()
 }
 
 
+void MainWindow::on_btnDecode_clicked() {
+    if (selectedShadows.empty()) {
+        QMessageBox::warning(this, "Error", "No shadows selected for decoding.");
+        return;  // Stop execution of the function if no shadows are selected
+    }
+    QString ShadowsThreshold = ui->txtShadowThreshold->text();
+    bool ok2 = false;
+    shadowsThreshold = ShadowsThreshold.toInt(&ok2);
+    std::cout << "shadowsThreshold: " << shadowsThreshold << std::endl;
+    if ( ok2 && shadowsThreshold >= 2) {
+        cv::Mat reconstructed = decodeShadowsTL(selectedShadows, shadowsThreshold);
+        cv::imshow("Reconstructed Image", reconstructed);
+        QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
+        ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+    }
+}
+
 
 void MainWindow::on_btnSelectImage_clicked()
 {
@@ -170,7 +188,9 @@ void MainWindow::on_btnSelectImage_clicked()
 
         if (!loadedImage.empty())
         {
-            // Since the image is grayscale, each pixel is represented by a single byte.
+            // Thresholding bec Thein-Lin (2002) scheme does not work for higher value, this will get rid of black pixels in decoding output for pixels with higher values on original image at the cost of changing of the original image
+            cv::threshold(loadedImage, loadedImage, 250, 250, cv::THRESH_TRUNC);
+
             QImage qimg(loadedImage.data, loadedImage.cols, loadedImage.rows, loadedImage.step, QImage::Format_Grayscale8);
             ui->picSelected->setPixmap(QPixmap::fromImage(qimg.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
         }
@@ -180,26 +200,6 @@ void MainWindow::on_btnSelectImage_clicked()
         }
     }
 }
-
-void MainWindow::on_btnDecode_clicked() {
-    if (selectedShadows.empty()) {
-        QMessageBox::warning(this, "Error", "No shadows selected for decoding.");
-        return;  // Stop execution of the function if no shadows are selected
-    }
-    for (const auto& shadow : selectedShadows) {
-        // print the shadow
-        // std::cout << shadow.size() << std::endl;
-    }
-    std::cout << "shadowsThreshold: " << shadowsThreshold << std::endl;
-    // cv::Mat reconstructed = reconstructImage(selectedShadows, shadowsThreshold);
-    // cv::imshow("org", loadedImage);
-    // Convert the cv::Mat to QImage for display (assuming the Mat is in grayscale)
-    // QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
-
-    // Display the QImage in a QLabel or other suitable Qt widget
-    // ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
-}
-
 
 void MainWindow::on_listGeneratedSh_itemDoubleClicked(QListWidgetItem *item)
 {

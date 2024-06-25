@@ -18,6 +18,7 @@ struct Shadow {
     cv::Mat image;  // The shadow image
     bool isEssential; // Flag to indicate if the shadow is essential
     std::string text; // Text representation of the shadow
+    int number;
 };
 
 class MainWindow : public QMainWindow
