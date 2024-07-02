@@ -3,7 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <string>
-#include <iostream>
+// #include <iostream>
 
 
 std::vector<std::string> generatePlaceholder(int amount, int selected_encoding) {
@@ -52,5 +52,26 @@ void convertShadowsToStr(std::vector<Shadow>& shadows) {
 }
 
 
+ImageViewer::ImageViewer(QWidget *parent) : QWidget(parent)
+{
+    imageLabel = new QLabel(this);
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    layout->addWidget(imageLabel);
+    setLayout(layout);
+}
 
 
+void ImageViewer::setImage(const cv::Mat &image)
+{
+    // Check if the image is grayscale
+    if (image.channels() == 1) {
+        // Convert cv::Mat to QImage (grayscale)
+        QImage qImage(image.data, image.cols, image.rows, image.step, QImage::Format_Grayscale8);
+        QPixmap pixmap = QPixmap::fromImage(qImage);
+        imageLabel->setPixmap(pixmap);
+        imageLabel->adjustSize();
+    } else {
+        // Handle the case where the image is not grayscale (optional)
+
+    }
+}

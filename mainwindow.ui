@@ -259,6 +259,21 @@
      <string>t</string>
     </property>
    </widget>
+   <widget class="QComboBox" name="dropdownEncodingType">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>150</y>
+      <width>131</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>Thien-Lin</string>
+     </property>
+    </item>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
