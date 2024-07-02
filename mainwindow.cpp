@@ -258,7 +258,7 @@ void MainWindow::on_actionHelp_triggered()
 
 void MainWindow::on_actionAuthor_triggered()
 {
-    QMessageBox::information(this, "About Author", "This GUI was created by <b>inż. Mikołaj Osiecki</b> <i>mdosiecki@gmail.com</i> for the purpose of the master thesis" 
+    QMessageBox::information(this, "About Author", "This program was created by <b>inż. Mikołaj Osiecki</b> <i>mdosiecki@gmail.com</i> for the purpose of the master thesis"
     "<br>"
     "<b>Scalable and multi-level algorithms for secret image data sharing</b>"
     "<br>"
