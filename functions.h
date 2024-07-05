@@ -17,6 +17,7 @@
 
 // Function to process a vector of Shadow objects and update their text fields
 void convertShadowsToStr(std::vector<Shadow>& shadows);
+std::vector<cv::Mat> sliceImageVertically(const cv::Mat& image, int n, bool usePadding);
 
 class ImageViewer : public QWidget
 {

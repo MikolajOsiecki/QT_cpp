@@ -75,3 +75,43 @@ void ImageViewer::setImage(const cv::Mat &image)
 
     }
 }
+
+
+cv::Mat padImage(const cv::Mat& image, int n) {
+    int newWidth = ((image.cols + n - 1) / n) * n;  // Find the next multiple of n
+    cv::Mat paddedImage;
+    int rightPadding = newWidth - image.cols;
+    cv::copyMakeBorder(image, paddedImage, 0, 0, 0, rightPadding, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+    return paddedImage;
+}
+
+
+cv::Mat cropImage(const cv::Mat& image, int n) {
+    int newWidth = (image.cols / n) * n;  // Largest multiple of n less than image.cols
+    cv::Rect cropRegion(0, 0, newWidth, image.rows);
+    return image(cropRegion);
+}
+
+
+std::vector<cv::Mat> sliceImageVertically(const cv::Mat& image, int n, bool usePadding) {
+    cv::Mat processedImage;
+    if (usePadding) {
+        processedImage = padImage(image, n);
+    } else {
+        processedImage = cropImage(image, n);
+    }
+
+    std::vector<cv::Mat> slices;
+    int sliceWidth = processedImage.cols / n;
+
+    for (int i = 0; i < n; ++i) {
+        int startCol = i * sliceWidth;
+        int endCol = startCol + sliceWidth;
+
+        cv::Rect sliceRegion(startCol, 0, endCol - startCol, processedImage.rows);
+        cv::Mat slice = processedImage(sliceRegion);
+        slices.push_back(slice);
+    }
+
+    return slices;
+}

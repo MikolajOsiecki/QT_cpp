@@ -159,8 +159,22 @@ void MainWindow::on_btnGenerateShadows_clicked()
             }
             break;
 
-        // case 1:
-        //     break;
+        case 1:
+            if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
+
+                bool usePadding = ui->checkBoxCropPadImage->isChecked();
+                std::vector<cv::Mat> slices = sliceImageVertically(loadedImage, shadowsAmount, usePadding);
+
+                // Display the slices for debugging purposes
+                for (int i = 0; i < slices.size(); ++i) {
+                    std::string windowName = "Slice " + std::to_string(i+1);
+                    cv::imshow(windowName, slices[i]);
+                }
+
+            } else {
+                QMessageBox::warning(this, "Error", "Invalid parameters!");
+            }
+            break;
         // case 2:
         //     break;
 
