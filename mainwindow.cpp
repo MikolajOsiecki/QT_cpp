@@ -165,16 +165,37 @@ void MainWindow::on_btnGenerateShadows_clicked()
                 bool usePadding = ui->checkBoxCropPadImage->isChecked();
                 std::vector<cv::Mat> slices = sliceImageVertically(loadedImage, shadowsAmount, usePadding);
 
-                // Display the slices for debugging purposes
+                std::vector<Shadow> allSubShadows;
                 for (int i = 0; i < slices.size(); ++i) {
-                    std::string windowName = "Slice " + std::to_string(i+1);
-                    cv::imshow(windowName, slices[i]);
+                    int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
+                    std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], shadowsAmount, WangLinAmount, i + 1);
+                    allSubShadows.insert(allSubShadows.end(), sliceShadows.begin(), sliceShadows.end());
+                }
+
+                // Compose the shadows using the new function
+                std::vector<Shadow> composedShadows = composeShadows(allSubShadows, shadowsAmount, shadowsThreshold);
+
+                // Merge composed shadows into the main shadow list
+                generatedShadows.insert(generatedShadows.end(), composedShadows.begin(), composedShadows.end());
+
+                convertShadowsToStr(generatedShadows);
+
+                // Add each shadow string to the QListWidget
+                for (const auto& shadow : generatedShadows) {
+                    QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
+
+                    if (shadow.isEssential) {
+                        newItem->setBackground(Qt::red);  // Set background color to red
+                    }
+
+                    ui->listGeneratedSh->addItem(newItem);
                 }
 
             } else {
                 QMessageBox::warning(this, "Error", "Invalid parameters!");
             }
             break;
+
         // case 2:
         //     break;
 
@@ -230,6 +251,8 @@ void MainWindow::on_btnSelectImage_clicked()
 void MainWindow::on_listGeneratedSh_itemDoubleClicked(QListWidgetItem *item)
 {
     int index = ui->listGeneratedSh->row(item);
+    std::cout<< "index: " << index << " ,generatedShadows.size(): " << generatedShadows.size() ;
+    std::cout << std::endl;
     // Check if the index is within the valid range of generatedShadows
     if (index >= 0 && index < generatedShadows.size()) {
         // Open the image in a new Qt window

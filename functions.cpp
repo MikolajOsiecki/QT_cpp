@@ -111,7 +111,55 @@ std::vector<cv::Mat> sliceImageVertically(const cv::Mat& image, int n, bool useP
         cv::Rect sliceRegion(startCol, 0, endCol - startCol, processedImage.rows);
         cv::Mat slice = processedImage(sliceRegion);
         slices.push_back(slice);
+
+        std::string fname = "KEYS_CPP/I" + std::to_string(i + 1) + ".bmp";
+        cv::imwrite(fname, slice);
     }
 
     return slices;
+}
+
+
+cv::Mat mergeSubImages(const std::vector<cv::Mat>& subImages) {
+    // Assuming all sub-images are of the same size and should be concatenated vertically
+    cv::Mat composedImage;
+    cv::hconcat(subImages, composedImage);
+    return composedImage;
+}
+
+std::vector<Shadow> composeShadows(const std::vector<Shadow>& allSubShadows, int shadowsAmount, int shadowsThreshold) {
+    std::vector<Shadow> composedShadows(shadowsAmount);
+
+    for (int i = 0; i < shadowsAmount; ++i) {
+        std::cout << "Now processing i == " << i << std::endl;
+        Shadow composedShadow;
+        composedShadow.isEssential = true;
+        composedShadow.number = i + 1;
+        composedShadow.sliceNumber = -1; // This is a composed shadow, not from a specific slice
+
+        std::vector<cv::Mat> subImages;
+        for (int j = 0; j < shadowsAmount; ++j) {
+            std::cout << "Now processing j == " << j << std::endl;
+            int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
+            for (int t = 0; t < WangLinAmount; ++t) {
+                if (j == i) {
+                    subImages.push_back(allSubShadows[j * WangLinAmount + t].image);
+                    std::cout << "Shadow Number: " << allSubShadows[j * WangLinAmount + t].number << " , slice number: " << allSubShadows[j * WangLinAmount + t].sliceNumber << std::endl;
+                } else if (j > i) {
+                    subImages.push_back(allSubShadows[j * WangLinAmount + i].image);
+                    std::cout << "Shadow Number: " << allSubShadows[j * WangLinAmount + i].number << " , slice number: " << allSubShadows[j * WangLinAmount + i].sliceNumber << std::endl;
+                } else {
+                    subImages.push_back(allSubShadows[j * WangLinAmount + (i + shadowsAmount - t)].image);
+                    std::cout << "Shadow Number: " << allSubShadows[j * WangLinAmount + (i + shadowsAmount - t)].number << " , slice number: " << allSubShadows[j * WangLinAmount + (i + shadowsAmount - t)].sliceNumber << std::endl;
+                }
+            }
+        }
+
+        // Merge all selected sub-images into one composed shadow image
+        composedShadow.image = mergeSubImages(subImages);
+        composedShadow.text = "Composed Shadow " + std::to_string(i + 1);
+        composedShadows[i] = composedShadow;
+    }
+
+    return composedShadows;
 }

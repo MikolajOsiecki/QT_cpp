@@ -8,7 +8,7 @@
 std::vector<std::vector<std::vector<uint8_t>>> initializeB(const cv::Mat& A, int H, int W, int K);
 std::vector<std::vector<std::vector<uint8_t>>> initializeC(const std::vector<std::vector<std::vector<uint8_t>>>& B, int H, int W, int K, int N);
 void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows);
-
+void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows, int sliceNumber);
 
 std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N) {
     int H = inputImage.rows;
@@ -19,6 +19,20 @@ std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N) {
 
     std::vector<Shadow> shadows;
     saveImages(C, H, W, N, shadows);
+
+    return shadows;
+}
+
+
+std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N, int sliceNumber) {
+    int H = inputImage.rows;
+    int W = inputImage.cols / K;
+
+    auto B = initializeB(inputImage, H, W, K);
+    auto C = initializeC(B, H, W, K, N);
+
+    std::vector<Shadow> shadows;
+    saveImages(C, H, W, N, shadows, sliceNumber);
 
     return shadows;
 }
@@ -77,11 +91,38 @@ void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, 
         shadows.push_back({img, true, "", R + 1});
 
         // Print the Shadow struct
-        std::cout << "Shadow " << R + 1 << " added: "
-                  << "isEssential=" << true
-                  << ", text=\"" << "" << "\""
-                  << ", number=" << R + 1
-                  << std::endl;
+        // std::cout << "Shadow " << R + 1 << " added: "
+        //           << "isEssential=" << true
+        //           << ", text=\"" << "" << "\""
+        //           << ", number=" << R + 1
+        //           << std::endl;
+    }
+}
+
+void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows, int sliceNumber) {
+    std::filesystem::create_directory("KEYS_CPP");
+    for (int R = 0; R < N; ++R) {
+        cv::Mat img(H, W, CV_8UC1);
+        for (int P = 0; P < H; ++P) {
+            for (int Q = 0; Q < W; ++Q) {
+                img.at<uint8_t>(P, Q) = C[P][Q][R];
+            }
+        }
+
+        std::string fname = "KEYS_CPP/K" + std::to_string(R + 1) + ".bmp";
+        if (!cv::imwrite(fname, img)) {
+            std::cerr << "Error saving image: " << fname << std::endl;
+        }
+
+        shadows.push_back({img, true, "", R + 1, sliceNumber});
+
+        // Print the Shadow struct
+        // std::cout << "Shadow " << R + 1 << " added: "
+        //           << "isEssential=" << true
+        //           << ", text=\"" << "" << "\""
+        //           << ", number=" << R + 1
+        //           << ", sliceNumber=" << sliceNumber
+        //           << std::endl;
     }
 }
 

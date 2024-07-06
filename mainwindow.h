@@ -19,6 +19,7 @@ struct Shadow {
     bool isEssential; // Flag to indicate if the shadow is essential
     std::string text; // Text representation of the shadow
     int number;
+    int sliceNumber;
 };
 
 class MainWindow : public QMainWindow
