@@ -53,8 +53,12 @@ void MainWindow::on_btnClear_clicked()
             selectedShadows.erase(selectedShadows.begin());
         }
     }
-        std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
-        std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+        // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
+        // std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+    // for (const auto& shadow : generatedShadows) {
+    //     std::cout << "generated text: " << shadow.text << std::endl;
+    //     std::cout << "generated number: " << shadow.number << std::endl;
+    // }
 }
 
 
@@ -81,8 +85,8 @@ void MainWindow::on_btnMoveBack_clicked()
         // Also remove the corresponding cv::Mat and X value from selectedShadows and selectedXValues
         selectedShadows.erase(selectedShadows.begin() + index);
     }
-        std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
-                std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+        // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
+        //         std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
 
 
 }
@@ -111,10 +115,8 @@ void MainWindow::on_btnSelectShadows_clicked()
         // Also remove the corresponding cv::Mat and X value from generatedShadows and generatedXValues
         generatedShadows.erase(generatedShadows.begin() + index);
     }
-            std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
-                    std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
-
-
+            // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
+            //         std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
 }
 
 
