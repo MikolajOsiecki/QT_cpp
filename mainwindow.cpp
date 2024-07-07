@@ -201,7 +201,7 @@ void MainWindow::on_btnGenerateShadows_clicked()
 
     default:
         QMessageBox::warning(this, "Error", "Invalid selection in encoding type!");
-        return;
+        break;
     }
 
 }
@@ -212,15 +212,42 @@ void MainWindow::on_btnDecode_clicked() {
         QMessageBox::warning(this, "Error", "No shadows selected for decoding.");
         return;  // Stop execution of the function if no shadows are selected
     }
+    QString ShadowsNumber = ui->txtNumberOfShadows->text();
+    bool ok = false;
+    shadowsAmount = ShadowsNumber.toInt(&ok);
     QString ShadowsThreshold = ui->txtShadowThreshold->text();
     bool ok2 = false;
     shadowsThreshold = ShadowsThreshold.toInt(&ok2);
-    std::cout << "shadowsThreshold: " << shadowsThreshold << std::endl;
-    if ( ok2 && shadowsThreshold >= 2) {
-        cv::Mat reconstructed = decodeShadowsTL(selectedShadows, shadowsThreshold);
-        // cv::imshow("Reconstructed Image", reconstructed);
-        QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
-        ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+
+    int selectedIndex = ui->dropdownEncodingType->currentIndex(); // Get the selected index from the dropdown
+    switch(selectedIndex){
+        case 0:
+            if (ok2 && shadowsThreshold >= 2) {
+                cv::Mat reconstructed = decodeShadowsTL(selectedShadows, shadowsThreshold);
+                // cv::imshow("Reconstructed Image", reconstructed);
+                QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
+                ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+            }
+            break;
+
+        case 1:
+            if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
+                std::vector<Shadow> partitionedShadows = decomposeShadows(selectedShadows, shadowsAmount, shadowsThreshold);
+
+                for (const auto& shadow : partitionedShadows) {
+                    std::cout << "Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
+                    std::string fname = "DECOMPOSED_SHADOWS/DS" + std::to_string(shadow.number) + "_" + std::to_string(shadow.sliceNumber) + ".bmp";
+                    if (!cv::imwrite(fname, shadow.image)) {
+                        std::cerr << "Error saving image: " << fname << std::endl;
+                    }
+                }
+                std::cout << "=============================" << std::endl;
+            }
+            break;
+
+        default:
+            QMessageBox::warning(this, "Error", "Invalid selection in encoding type!");
+            break;
     }
 }
 

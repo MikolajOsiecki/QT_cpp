@@ -20,6 +20,7 @@ void convertShadowsToStr(std::vector<Shadow>& shadows);
 std::vector<cv::Mat> sliceImageVertically(const cv::Mat& image, int n, bool usePadding);
 cv::Mat mergeSubImages(const std::vector<cv::Mat>& subImages);
 std::vector<Shadow> composeShadows(const std::vector<Shadow>& allSubShadows, int shadowsAmount, int shadowsThreshold);
+std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows, int shadowsAmount, int shadowsThreshold);
 
 class ImageViewer : public QWidget
 {
