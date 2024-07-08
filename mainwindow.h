@@ -56,10 +56,13 @@ private slots:
 private:
     Ui::MainWindow *ui;
     cv::Mat loadedImage;
-    std::vector<Shadow> generatedShadows; // Hold the generated shadow images and their importance
-    std::vector<Shadow> selectedShadows;  // Hold the selected shadow images and their importance
-    std::vector<std::string> generatedShadowsStrings; // Hold the generated shadow images as strings
-    std::vector<std::string> selectedShadowsStrings;  // Hold the selected shadow images as strings
+    std::vector<Shadow> generatedShadows;               // Hold the generated shadow images and their importance
+    std::vector<Shadow> selectedShadows;                // Hold the selected shadow images and their importance
+    std::vector<Shadow> partitionedShadows;             // Hold the partitioned shadow images (Wang-Lin)
+    std::vector<Shadow> copiedPartitions;               // Hold the partitions shadow images (Wang-Lin)
+    std::vector<cv::Mat> decodedPartitions;             // Hold the decoded partitions (Wang-Ling)
+    std::vector<std::string> generatedShadowsStrings;   // Hold the generated shadow images as strings
+    std::vector<std::string> selectedShadowsStrings;    // Hold the selected shadow images as strings
     int shadowsThreshold;
     int shadowsAmount;
 };

@@ -53,8 +53,8 @@ void MainWindow::on_btnClear_clicked()
             selectedShadows.erase(selectedShadows.begin());
         }
     }
-        std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
-        std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+        // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
+        // std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
 }
 
 
@@ -81,8 +81,8 @@ void MainWindow::on_btnMoveBack_clicked()
         // Also remove the corresponding cv::Mat and X value from selectedShadows and selectedXValues
         selectedShadows.erase(selectedShadows.begin() + index);
     }
-        std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
-                std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+        // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
+        // std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
 
 
 }
@@ -111,8 +111,8 @@ void MainWindow::on_btnSelectShadows_clicked()
         // Also remove the corresponding cv::Mat and X value from generatedShadows and generatedXValues
         generatedShadows.erase(generatedShadows.begin() + index);
     }
-            std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
-                    std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+            // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
+            // std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
 
 
 }
@@ -223,7 +223,7 @@ void MainWindow::on_btnDecode_clicked() {
     switch(selectedIndex){
         case 0:
             if (ok2 && shadowsThreshold >= 2) {
-                cv::Mat reconstructed = decodeShadowsTL(selectedShadows, shadowsThreshold);
+                cv::Mat reconstructed = decodeShadowsTLdebug(selectedShadows, shadowsThreshold);
                 // cv::imshow("Reconstructed Image", reconstructed);
                 QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
                 ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
@@ -232,15 +232,45 @@ void MainWindow::on_btnDecode_clicked() {
 
         case 1:
             if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
-                std::vector<Shadow> partitionedShadows = decomposeShadows(selectedShadows, shadowsAmount, shadowsThreshold);
+                partitionedShadows.clear();
+                decodedPartitions.clear();
+                partitionedShadows = decomposeShadows(selectedShadows, shadowsAmount, shadowsThreshold);
+                int k =1;
+                for(int i = 0; i < shadowsAmount; i++){
+                    copiedPartitions.clear();
+                    copiedPartitions = copyShadowsWithNumber(partitionedShadows, i+1);
 
-                for (const auto& shadow : partitionedShadows) {
-                    std::cout << "Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
-                    std::string fname = "DECOMPOSED_SHADOWS/DS" + std::to_string(shadow.number) + "_" + std::to_string(shadow.sliceNumber) + ".bmp";
-                    if (!cv::imwrite(fname, shadow.image)) {
-                        std::cerr << "Error saving image: " << fname << std::endl;
+
+                    cv::Mat reconstructedPartition = decodeShadowsTL(copiedPartitions, shadowsAmount);
+                    decodedPartitions.push_back(reconstructedPartition);
+
+
+                    if (i == 3){
+                        for (const auto& shadow : copiedPartitions) {
+                            std::cout << "Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
+                            std::string fname = "DECOMPOSED_SHADOWS/DS" + std::to_string(shadow.number) + "_" + std::to_string(shadow.sliceNumber) + ".bmp";
+                            std::string windowName = cv::format("Partition %d", k);
+                            k+=1;
+                            cv::imshow(windowName, shadow.image);
+                            if (!cv::imwrite(fname, shadow.image)) {
+                                std::cout << "Error saving image: " << fname << std::endl;
+                            }
+                        }
+                        std::string windowName = cv::format("Partition %d", i + 1);
+                        cv::imshow(windowName, reconstructedPartition);
+                        // cv::waitKey(0);
                     }
                 }
+                cv::Mat reconstructed = mergeSubImages(decodedPartitions);
+                QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
+                ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+                // for (const auto& shadow : partitionedShadows) {
+                //     std::cout << "Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
+                //     std::string fname = "DECOMPOSED_SHADOWS/DS" + std::to_string(shadow.number) + "_" + std::to_string(shadow.sliceNumber) + ".bmp";
+                //     if (!cv::imwrite(fname, shadow.image)) {
+                //         std::cerr << "Error saving image: " << fname << std::endl;
+                //     }
+                // }
                 std::cout << "=============================" << std::endl;
             }
             break;

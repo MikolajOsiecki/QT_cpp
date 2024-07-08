@@ -8,5 +8,6 @@
 std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N);
 std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N, int sliceNumber);
 cv::Mat decodeShadowsTL(const std::vector<Shadow>& selectedShadows, int K);
+cv::Mat decodeShadowsTLdebug(const std::vector<Shadow>& selectedShadows, int K);
 
 #endif // THIEN_LIN_SHADOWS_H

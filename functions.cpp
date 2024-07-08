@@ -142,7 +142,7 @@ std::vector<Shadow> composeShadows(const std::vector<Shadow>& allSubShadows, int
     std::vector<Shadow> composedShadows(shadowsAmount);
 
     for (int i = 0; i < shadowsAmount; ++i) {
-        std::cout << "Now processing i == " << i << std::endl;
+        // std::cout << "Now processing i == " << i << std::endl;
         Shadow composedShadow;
         composedShadow.isEssential = true;
         composedShadow.number = i + 1;
@@ -150,25 +150,25 @@ std::vector<Shadow> composeShadows(const std::vector<Shadow>& allSubShadows, int
         int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
         std::vector<cv::Mat> subImages;
         for (int j = 0; j < shadowsAmount; ++j) {
-            std::cout << "Now processing j == " << j << std::endl;
+            // std::cout << "Now processing j == " << j << std::endl;
 
                 if (j == i) {
                     for (int k = j; k < j + shadowsAmount - shadowsThreshold + 1; ++k) {
-                        std::cout << "Adding j==i, k == " << k << std::endl;
+                        // std::cout << "Adding j==i, k == " << k << std::endl;
                         subImages.push_back(allSubShadows[j*WangLinAmount + k].image);
-                        std::cout << "Shadow Number: " << allSubShadows[j*WangLinAmount + k].number << " , slice number: " << allSubShadows[j*WangLinAmount + k].sliceNumber << std::endl;
+                        // std::cout << "Shadow Number: " << allSubShadows[j*WangLinAmount + k].number << " , slice number: " << allSubShadows[j*WangLinAmount + k].sliceNumber << std::endl;
                     }
                 } else if (j > i) {
-                    std::cout << "Adding j>i, i == " << i << std::endl;
+                    // std::cout << "Adding j>i, i == " << i << std::endl;
                     subImages.push_back(allSubShadows[j * WangLinAmount + i].image);
-                    std::cout << "Shadow Number: " << allSubShadows[j * WangLinAmount + i].number << " , slice number: " << allSubShadows[j * WangLinAmount + i].sliceNumber << std::endl;
+                    // std::cout << "Shadow Number: " << allSubShadows[j * WangLinAmount + i].number << " , slice number: " << allSubShadows[j * WangLinAmount + i].sliceNumber << std::endl;
                 } else {
-                    std::cout << "Adding j<i, i+n-t == " << i+shadowsAmount-shadowsThreshold << std::endl;
+                    // std::cout << "Adding j<i, i+n-t == " << i+shadowsAmount-shadowsThreshold << std::endl;
                     subImages.push_back(allSubShadows[j * WangLinAmount + (i + shadowsAmount - shadowsThreshold)].image);
-                    std::cout << "Shadow Number: " << allSubShadows[j * WangLinAmount + (i + shadowsAmount - shadowsThreshold)].number << " , slice number: " << allSubShadows[j * WangLinAmount + (i + shadowsAmount - shadowsThreshold)].sliceNumber << std::endl;
+                    // std::cout << "Shadow Number: " << allSubShadows[j * WangLinAmount + (i + shadowsAmount - shadowsThreshold)].number << " , slice number: " << allSubShadows[j * WangLinAmount + (i + shadowsAmount - shadowsThreshold)].sliceNumber << std::endl;
                 }
         }
-        std::cout << "=================" << std::endl;
+        // std::cout << "=================" << std::endl;
         // Merge all selected sub-images into one composed shadow image
         composedShadow.image = mergeSubImages(subImages);
         composedShadow.text = "Composed Shadow " + std::to_string(i + 1);
@@ -176,7 +176,7 @@ std::vector<Shadow> composeShadows(const std::vector<Shadow>& allSubShadows, int
 
         std::string fname = "KEYS_CPP/K" + std::to_string(i + 1) + ".bmp";
         if (!cv::imwrite(fname, composedShadow.image)) {
-            std::cerr << "Error saving image: " << fname << std::endl;
+            std::cout << "Error saving image: " << fname << std::endl;
         }
     }
 
@@ -190,7 +190,7 @@ std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows,
 
     for (const auto& composedShadow : composedShadows) {
         std::vector<cv::Mat> slices = sliceImageVertically(composedShadow.image, WangLinAmount, false);
-        std::cout << "composedShadow.number: " << composedShadow.number << std::endl;
+        // std::cout << "composedShadow.number: " << composedShadow.number << std::endl;
 
         int i = composedShadow.number - 1;
         for (int j = 0; j < shadowsAmount; ++j) {
@@ -198,29 +198,31 @@ std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows,
                 for (int k = j; k < j +  shadowsAmount - shadowsThreshold + 1; ++k) {
                     Shadow subShadow;
                     subShadow.isEssential = true;
-                    subShadow.number = j + 1;
-                    subShadow.sliceNumber = k + 1;
+                    subShadow.sliceNumber = j + 1;
+                    subShadow.number = k + 1;
                     subShadow.image = slices[k];
-                    std::cout << "slice.number j==i: " << k << std::endl;
+                    // std::cout << "slice.number j==i: " << k << std::endl;
                     subShadow.text = "Sub Shadow " + std::to_string(j + 1) + "-" + std::to_string(k + 1);
                     allSubShadows.push_back(subShadow);
                 }
+            // i have no idea why these 2 cases have to have selectors (shadow.image) like that
+            // j==i has same as in composeShadows minus the offset and these two dont. it just works
             } else if (j > i) {
                 Shadow subShadow;
                 subShadow.isEssential = true;
-                subShadow.number = j + 1;
-                subShadow.sliceNumber = i + 1;
+                subShadow.sliceNumber = j + 1;
+                subShadow.number = i + 1;
                 subShadow.image = slices[j+ shadowsAmount - shadowsThreshold];
-                std::cout << "slice.number j > i: " << j+ shadowsAmount - shadowsThreshold << std::endl;
+                // std::cout << "slice.number j > i: " << j+ shadowsAmount - shadowsThreshold << std::endl;
                 subShadow.text = "Sub Shadow " + std::to_string(j + 1) + "-" + std::to_string(i + 1);
                 allSubShadows.push_back(subShadow);
             } else {
                 Shadow subShadow;
                 subShadow.isEssential = true;
-                subShadow.number = j + 1;
-                subShadow.sliceNumber = i + 1 + shadowsAmount - shadowsThreshold;
+                subShadow.sliceNumber = j + 1;
+                subShadow.number = i + 1 + shadowsAmount - shadowsThreshold;
                 subShadow.image = slices[j];
-                std::cout << "slice.number j < i: " << j << std::endl;
+                // std::cout << "slice.number j < i: " << j << std::endl;
                 subShadow.text = "Sub Shadow " + std::to_string(j + 1) + "-" + std::to_string(i + 1);
                 allSubShadows.push_back(subShadow);
             }
@@ -228,4 +230,18 @@ std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows,
     }
 
     return allSubShadows;
+}
+
+
+std::vector<Shadow> copyShadowsWithNumber(const std::vector<Shadow>& shadows, int specifiedNumber) {
+    std::vector<Shadow> result;
+
+    for (const auto& shadow : shadows) {
+        if (shadow.sliceNumber == specifiedNumber) {
+            // std::cout << "Copied Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
+            result.push_back(shadow);
+        }
+    }
+
+    return result;
 }
