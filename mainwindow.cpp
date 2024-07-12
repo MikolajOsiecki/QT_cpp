@@ -55,6 +55,7 @@ void MainWindow::on_btnClear_clicked()
     }
         // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
         // std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+
 }
 
 
@@ -113,7 +114,6 @@ void MainWindow::on_btnSelectShadows_clicked()
     }
             // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
             // std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
-
 
 }
 
