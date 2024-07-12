@@ -223,7 +223,7 @@ void MainWindow::on_btnDecode_clicked() {
     switch(selectedIndex){
         case 0:
             if (ok2 && shadowsThreshold >= 2) {
-                cv::Mat reconstructed = decodeShadowsTLdebug(selectedShadows, shadowsThreshold);
+                cv::Mat reconstructed = decodeShadowsTL(selectedShadows, shadowsThreshold);
                 // cv::imshow("Reconstructed Image", reconstructed);
                 QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
                 ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
@@ -235,7 +235,7 @@ void MainWindow::on_btnDecode_clicked() {
                 partitionedShadows.clear();
                 decodedPartitions.clear();
                 partitionedShadows = decomposeShadows(selectedShadows, shadowsAmount, shadowsThreshold);
-                int k =1;
+                // int k =1;
                 for(int i = 0; i < shadowsAmount; i++){
                     copiedPartitions.clear();
                     copiedPartitions = copyShadowsWithNumber(partitionedShadows, i+1);
@@ -245,21 +245,21 @@ void MainWindow::on_btnDecode_clicked() {
                     decodedPartitions.push_back(reconstructedPartition);
 
 
-                    if (i == 3){
-                        for (const auto& shadow : copiedPartitions) {
-                            std::cout << "Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
-                            std::string fname = "DECOMPOSED_SHADOWS/DS" + std::to_string(shadow.number) + "_" + std::to_string(shadow.sliceNumber) + ".bmp";
-                            std::string windowName = cv::format("Partition %d", k);
-                            k+=1;
-                            cv::imshow(windowName, shadow.image);
-                            if (!cv::imwrite(fname, shadow.image)) {
-                                std::cout << "Error saving image: " << fname << std::endl;
-                            }
-                        }
-                        std::string windowName = cv::format("Partition %d", i + 1);
-                        cv::imshow(windowName, reconstructedPartition);
+                    // if (i == 3){
+                        // for (const auto& shadow : copiedPartitions) {
+                            // std::cout << "Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
+                            // std::string fname = "DECOMPOSED_SHADOWS/DS" + std::to_string(shadow.number) + "_" + std::to_string(shadow.sliceNumber) + ".bmp";
+                            // std::string windowName = cv::format("Partition %d", k);
+                            // k+=1;
+                            // cv::imshow(windowName, shadow.image);
+                            // if (!cv::imwrite(fname, shadow.image)) {
+                                // std::cout << "Error saving image: " << fname << std::endl;
+                            // }
+                        // }
+                        // std::string windowName = cv::format("Partition %d", i + 1);
+                        // cv::imshow(windowName, reconstructedPartition);
                         // cv::waitKey(0);
-                    }
+                    // }
                 }
                 cv::Mat reconstructed = mergeSubImages(decodedPartitions);
                 QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
@@ -308,8 +308,8 @@ void MainWindow::on_btnSelectImage_clicked()
 void MainWindow::on_listGeneratedSh_itemDoubleClicked(QListWidgetItem *item)
 {
     int index = ui->listGeneratedSh->row(item);
-    std::cout<< "index: " << index << " ,generatedShadows.size(): " << generatedShadows.size() ;
-    std::cout << std::endl;
+    // std::cout<< "index: " << index << " ,generatedShadows.size(): " << generatedShadows.size() ;
+    // std::cout << std::endl;
     // Check if the index is within the valid range of generatedShadows
     if (index >= 0 && index < generatedShadows.size()) {
         // Open the image in a new Qt window
