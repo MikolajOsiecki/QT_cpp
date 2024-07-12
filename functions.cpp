@@ -75,3 +75,173 @@ void ImageViewer::setImage(const cv::Mat &image)
 
     }
 }
+
+
+cv::Mat padImage(const cv::Mat& image, int n) {
+    int newWidth = ((image.cols + n - 1) / n) * n;  // Find the next multiple of n
+    cv::Mat paddedImage;
+    int rightPadding = newWidth - image.cols;
+    cv::copyMakeBorder(image, paddedImage, 0, 0, 0, rightPadding, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+    return paddedImage;
+}
+
+
+cv::Mat cropImage(const cv::Mat& image, int n) {
+    int newWidth = (image.cols / n) * n;  // Largest multiple of n less than image.cols
+    cv::Rect cropRegion(0, 0, newWidth, image.rows);
+    return image(cropRegion);
+}
+
+
+std::vector<cv::Mat> sliceImageVertically(const cv::Mat& image, int n, bool usePadding = false) {
+    cv::Mat processedImage;
+    if (usePadding) {
+        processedImage = padImage(image, n);
+    } else {
+        processedImage = cropImage(image, n);
+    }
+
+    std::vector<cv::Mat> slices;
+    int sliceWidth = processedImage.cols / n;
+
+    for (int i = 0; i < n; ++i) {
+        int startCol = i * sliceWidth;
+        int endCol = startCol + sliceWidth;
+
+        cv::Rect sliceRegion(startCol, 0, endCol - startCol, processedImage.rows);
+        cv::Mat slice = processedImage(sliceRegion);
+        slices.push_back(slice);
+
+        std::string fname = "KEYS_CPP/I" + std::to_string(i + 1) + ".bmp";
+        cv::imwrite(fname, slice);
+    }
+
+    return slices;
+}
+
+
+cv::Mat mergeSubImages(const std::vector<cv::Mat>& subImages) {
+    // Assuming all sub-images are of the same size and should be concatenated vertically
+    cv::Mat composedImage;
+    cv::hconcat(subImages, composedImage);
+    return composedImage;
+}
+
+
+/**
+ * Function to compose shadows from all sub-shadows
+ * @param allSubShadows: A vector containing all sub-shadows
+ * @param shadowsAmount: The total number of shadows
+ * @param shadowsThreshold: The threshold for decoding shadows
+ * @return A vector containing the composed shadows (shadowsAmount in total)
+ * @note Function assumes that all sub-shadows are of the same size, and that the shadows are concatenated vertically
+ *
+ * The function will compose shadows based on Wang-Lin's method (2013).
+*/
+std::vector<Shadow> composeShadows(const std::vector<Shadow>& allSubShadows, int shadowsAmount, int shadowsThreshold) {
+    std::vector<Shadow> composedShadows(shadowsAmount);
+
+    for (int i = 0; i < shadowsAmount; ++i) {
+        // std::cout << "Now processing i == " << i << std::endl;
+        Shadow composedShadow;
+        composedShadow.isEssential = true;
+        composedShadow.number = i + 1;
+        composedShadow.sliceNumber = -1; // This is a composed shadow, not from a specific slice
+        int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
+        std::vector<cv::Mat> subImages;
+        for (int j = 0; j < shadowsAmount; ++j) {
+            // std::cout << "Now processing j == " << j << std::endl;
+
+                if (j == i) {
+                    for (int k = j; k < j + shadowsAmount - shadowsThreshold + 1; ++k) {
+                        // std::cout << "Adding j==i, k == " << k << std::endl;
+                        subImages.push_back(allSubShadows[j*WangLinAmount + k].image);
+                        // std::cout << "Shadow Number: " << allSubShadows[j*WangLinAmount + k].number << " , slice number: " << allSubShadows[j*WangLinAmount + k].sliceNumber << std::endl;
+                    }
+                } else if (j > i) {
+                    // std::cout << "Adding j>i, i == " << i << std::endl;
+                    subImages.push_back(allSubShadows[j * WangLinAmount + i].image);
+                    // std::cout << "Shadow Number: " << allSubShadows[j * WangLinAmount + i].number << " , slice number: " << allSubShadows[j * WangLinAmount + i].sliceNumber << std::endl;
+                } else {
+                    // std::cout << "Adding j<i, i+n-t == " << i+shadowsAmount-shadowsThreshold << std::endl;
+                    subImages.push_back(allSubShadows[j * WangLinAmount + (i + shadowsAmount - shadowsThreshold)].image);
+                    // std::cout << "Shadow Number: " << allSubShadows[j * WangLinAmount + (i + shadowsAmount - shadowsThreshold)].number << " , slice number: " << allSubShadows[j * WangLinAmount + (i + shadowsAmount - shadowsThreshold)].sliceNumber << std::endl;
+                }
+        }
+        // std::cout << "=================" << std::endl;
+        // Merge all selected sub-images into one composed shadow image
+        composedShadow.image = mergeSubImages(subImages);
+        composedShadow.text = "Composed Shadow " + std::to_string(i + 1);
+        composedShadows[i] = composedShadow;
+
+        std::string fname = "KEYS_CPP/K" + std::to_string(i + 1) + ".bmp";
+        if (!cv::imwrite(fname, composedShadow.image)) {
+            std::cout << "Error saving image: " << fname << std::endl;
+        }
+    }
+
+    return composedShadows;
+}
+
+
+std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows, int shadowsAmount, int shadowsThreshold) {
+    std::vector<Shadow> allSubShadows;
+    int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
+
+    for (const auto& composedShadow : composedShadows) {
+        std::vector<cv::Mat> slices = sliceImageVertically(composedShadow.image, WangLinAmount, false);
+        // std::cout << "composedShadow.number: " << composedShadow.number << std::endl;
+
+        int i = composedShadow.number - 1;
+        for (int j = 0; j < shadowsAmount; ++j) {
+            if (j == i) {
+                for (int k = j; k < j +  shadowsAmount - shadowsThreshold + 1; ++k) {
+                    Shadow subShadow;
+                    subShadow.isEssential = true;
+                    subShadow.sliceNumber = j + 1;
+                    subShadow.number = k + 1;
+                    subShadow.image = slices[k];
+                    // std::cout << "slice.number j==i: " << k << std::endl;
+                    subShadow.text = "Sub Shadow " + std::to_string(j + 1) + "-" + std::to_string(k + 1);
+                    allSubShadows.push_back(subShadow);
+                }
+            // i have no idea why these 2 cases have to have selectors (shadow.image) like that
+            // j==i has same as in composeShadows minus the offset and these two dont. it just works
+            } else if (j > i) {
+                Shadow subShadow;
+                subShadow.isEssential = true;
+                subShadow.sliceNumber = j + 1;
+                subShadow.number = i + 1;
+                subShadow.image = slices[j+ shadowsAmount - shadowsThreshold];
+                // std::cout << "slice.number j > i: " << j+ shadowsAmount - shadowsThreshold << std::endl;
+                subShadow.text = "Sub Shadow " + std::to_string(j + 1) + "-" + std::to_string(i + 1);
+                allSubShadows.push_back(subShadow);
+            } else {
+                Shadow subShadow;
+                subShadow.isEssential = true;
+                subShadow.sliceNumber = j + 1;
+                subShadow.number = i + 1 + shadowsAmount - shadowsThreshold;
+                subShadow.image = slices[j];
+                // std::cout << "slice.number j < i: " << j << std::endl;
+                subShadow.text = "Sub Shadow " + std::to_string(j + 1) + "-" + std::to_string(i + 1);
+                allSubShadows.push_back(subShadow);
+            }
+        }
+    }
+
+    return allSubShadows;
+}
+
+
+std::vector<Shadow> copyShadowsWithNumber(const std::vector<Shadow>& shadows, int specifiedNumber) {
+    std::vector<Shadow> result;
+
+    for (const auto& shadow : shadows) {
+        if (shadow.sliceNumber == specifiedNumber) {
+            // std::cout << "Copied Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
+            result.push_back(shadow);
+        }
+    }
+
+    return result;
+}

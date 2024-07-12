@@ -13,6 +13,12 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="toolTip">
+   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Off: image will be cropped to fit slices&lt;/p&gt;&lt;p&gt;On: image will be padded to fit slices&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+  </property>
+  <property name="toolButtonStyle">
+   <enum>Qt::ToolButtonIconOnly</enum>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QPushButton" name="btnGenerateShadows">
     <property name="geometry">
@@ -37,7 +43,7 @@
      <rect>
       <x>50</x>
       <y>20</y>
-      <width>531</width>
+      <width>521</width>
       <height>441</height>
      </rect>
     </property>
@@ -54,9 +60,9 @@
    <widget class="QLabel" name="picDecoded">
     <property name="geometry">
      <rect>
-      <x>710</x>
+      <x>720</x>
       <y>20</y>
-      <width>541</width>
+      <width>531</width>
       <height>441</height>
      </rect>
     </property>
@@ -273,6 +279,24 @@
       <string>Thien-Lin</string>
      </property>
     </item>
+    <item>
+     <property name="text">
+      <string>Lin-Wang</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxCropPadImage">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>350</y>
+      <width>131</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Crop/Pad Image</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

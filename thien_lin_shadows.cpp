@@ -1,5 +1,3 @@
-#include <opencv2/opencv.hpp>
-#include <vector>
 #include <iostream>
 #include <filesystem>
 #include "thien_lin_shadows.h"
@@ -8,7 +6,7 @@
 std::vector<std::vector<std::vector<uint8_t>>> initializeB(const cv::Mat& A, int H, int W, int K);
 std::vector<std::vector<std::vector<uint8_t>>> initializeC(const std::vector<std::vector<std::vector<uint8_t>>>& B, int H, int W, int K, int N);
 void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows);
-
+void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows, int sliceNumber);
 
 std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N) {
     int H = inputImage.rows;
@@ -19,6 +17,20 @@ std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N) {
 
     std::vector<Shadow> shadows;
     saveImages(C, H, W, N, shadows);
+
+    return shadows;
+}
+
+
+std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N, int sliceNumber) {
+    int H = inputImage.rows;
+    int W = inputImage.cols / K;
+
+    auto B = initializeB(inputImage, H, W, K);
+    auto C = initializeC(B, H, W, K, N);
+
+    std::vector<Shadow> shadows;
+    saveImages(C, H, W, N, shadows, sliceNumber);
 
     return shadows;
 }
@@ -77,11 +89,38 @@ void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, 
         shadows.push_back({img, true, "", R + 1});
 
         // Print the Shadow struct
-        std::cout << "Shadow " << R + 1 << " added: "
-                  << "isEssential=" << true
-                  << ", text=\"" << "" << "\""
-                  << ", number=" << R + 1
-                  << std::endl;
+        // std::cout << "Shadow " << R + 1 << " added: "
+        //           << "isEssential=" << true
+        //           << ", text=\"" << "" << "\""
+        //           << ", number=" << R + 1
+        //           << std::endl;
+    }
+}
+
+void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows, int sliceNumber) {
+    std::filesystem::create_directory("KEYS_CPP");
+    for (int R = 0; R < N; ++R) {
+        cv::Mat img(H, W, CV_8UC1);
+        for (int P = 0; P < H; ++P) {
+            for (int Q = 0; Q < W; ++Q) {
+                img.at<uint8_t>(P, Q) = C[P][Q][R];
+            }
+        }
+
+        std::string fname = "KEYS_CPP/K" + std::to_string(R + 1) + ".bmp";
+        if (!cv::imwrite(fname, img)) {
+            std::cerr << "Error saving image: " << fname << std::endl;
+        }
+
+        shadows.push_back({img, true, "", R + 1, sliceNumber});
+
+        // Print the Shadow struct
+        // std::cout << "Shadow " << R + 1 << " added: "
+        //           << "isEssential=" << true
+        //           << ", text=\"" << "" << "\""
+        //           << ", number=" << R + 1
+        //           << ", sliceNumber=" << sliceNumber
+        //           << std::endl;
     }
 }
 
@@ -161,6 +200,9 @@ std::vector<int> modLagPol(const std::vector<int>& y, const std::vector<double>&
     for (int p = 1; p <= m; ++p) {
         std::vector<double> t(a[p-1].size());
         std::transform(a[p-1].begin(), a[p-1].end(), t.begin(), [den, &b, p](double val) { return val * (den / b[p-1]); });
+        if((den / b[p-1]) == 0 || den == 0 || b[p-1] == 0){
+            std::cout << "Division by 0!!!" << std::endl;
+        }
         for (size_t i = 0; i < t.size(); ++i) {
             num[i] += y[p-1] * t[i];
         }
@@ -178,7 +220,7 @@ cv::Mat decodeShadowsTL(const std::vector<Shadow>& selectedShadows, int K) {
     int R = selectedShadows.size();
     if (R < K) {
         std::cout << "-- Insufficient Number of Keys" << std::endl;
-        return cv::Mat();
+        // return cv::Mat();
     }
 
     std::vector<int> X(R);
@@ -225,3 +267,55 @@ cv::Mat decodeShadowsTL(const std::vector<Shadow>& selectedShadows, int K) {
 
     return I;
 }
+
+// cv::Mat decodeShadowsTLdebug(const std::vector<Shadow>& selectedShadows, int K) {
+//     int R = selectedShadows.size();
+//     if (R < K) {
+//         std::cout << "-- Insufficient Number of Keys" << std::endl;
+//         // return cv::Mat();
+//     }
+
+//     std::vector<int> X(R);
+//     for (int i = 0; i < R; ++i) {
+//         X[i] = selectedShadows[i].number;  // Use the number field from the Shadow struct
+//     }
+
+//     // Load the first image to get the dimensions
+//     cv::Mat firstImage = selectedShadows[0].image;
+//     int H = firstImage.rows;
+//     int W = firstImage.cols;
+
+//     // Create a 3D matrix to store all images
+//     std::vector<cv::Mat> A(R, cv::Mat(H, W, CV_8UC1));
+
+//     // Load all images into the 3D matrix
+//     for (int P = 0; P < R; ++P) {
+//         A[P] = selectedShadows[P].image;
+//     }
+
+//     // Process the images
+//     cv::Mat I = cv::Mat::zeros(H, W * K, CV_64FC1);
+
+//     for (int M = 0; M < H; ++M) {
+//         for (int N = 0; N < W; ++N) {
+//             std::vector<int> Y(R);
+//             for (int O = 0; O < R; ++O) {
+//                 Y[O] = A[O].at<uchar>(M, N);
+//             }
+
+//             std::vector<int> Z = modLagPol(Y, std::vector<double>(X.begin(), X.end()), 251);
+//             Z = std::vector<int>(Z.begin() + (R - K), Z.end());
+
+//             for (int O = 0; O < K; ++O) {
+//                 I.at<double>(M, N + (W * O)) = Z[O];
+//             }
+//         }
+//     }
+
+//     I.convertTo(I, CV_8UC1);
+//     imwrite("Message_new.jpg", I);
+
+//     std::cout << "-- Message Successfully Recovered" << std::endl;
+
+//     return I;
+// }

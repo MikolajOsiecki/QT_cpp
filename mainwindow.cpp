@@ -55,10 +55,7 @@ void MainWindow::on_btnClear_clicked()
     }
         // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
         // std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
-    // for (const auto& shadow : generatedShadows) {
-    //     std::cout << "generated text: " << shadow.text << std::endl;
-    //     std::cout << "generated number: " << shadow.number << std::endl;
-    // }
+
 }
 
 
@@ -86,7 +83,7 @@ void MainWindow::on_btnMoveBack_clicked()
         selectedShadows.erase(selectedShadows.begin() + index);
     }
         // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
-        //         std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+        // std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
 
 
 }
@@ -116,7 +113,8 @@ void MainWindow::on_btnSelectShadows_clicked()
         generatedShadows.erase(generatedShadows.begin() + index);
     }
             // std::cout << "generatedShadows.size(): " << generatedShadows.size() << std::endl;
-            //         std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+            // std::cout << "selectedShadows.size(): " << selectedShadows.size() << std::endl;
+
 }
 
 
@@ -161,14 +159,49 @@ void MainWindow::on_btnGenerateShadows_clicked()
             }
             break;
 
-        // case 1:
-        //     break;
+        case 1:
+            if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
+
+                bool usePadding = ui->checkBoxCropPadImage->isChecked();
+                std::vector<cv::Mat> slices = sliceImageVertically(loadedImage, shadowsAmount, usePadding);
+
+                std::vector<Shadow> allSubShadows;
+                for (int i = 0; i < slices.size(); ++i) {
+                    int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
+                    std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], shadowsAmount, WangLinAmount, i + 1);
+                    allSubShadows.insert(allSubShadows.end(), sliceShadows.begin(), sliceShadows.end());
+                }
+
+                // Compose the shadows using the new function
+                std::vector<Shadow> composedShadows = composeShadows(allSubShadows, shadowsAmount, shadowsThreshold);
+
+                // Merge composed shadows into the main shadow list
+                generatedShadows.insert(generatedShadows.end(), composedShadows.begin(), composedShadows.end());
+
+                convertShadowsToStr(generatedShadows);
+
+                // Add each shadow string to the QListWidget
+                for (const auto& shadow : generatedShadows) {
+                    QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
+
+                    if (shadow.isEssential) {
+                        newItem->setBackground(Qt::red);  // Set background color to red
+                    }
+
+                    ui->listGeneratedSh->addItem(newItem);
+                }
+
+            } else {
+                QMessageBox::warning(this, "Error", "Invalid parameters!");
+            }
+            break;
+
         // case 2:
         //     break;
 
     default:
         QMessageBox::warning(this, "Error", "Invalid selection in encoding type!");
-        return;
+        break;
     }
 
 }
@@ -179,15 +212,72 @@ void MainWindow::on_btnDecode_clicked() {
         QMessageBox::warning(this, "Error", "No shadows selected for decoding.");
         return;  // Stop execution of the function if no shadows are selected
     }
+    QString ShadowsNumber = ui->txtNumberOfShadows->text();
+    bool ok = false;
+    shadowsAmount = ShadowsNumber.toInt(&ok);
     QString ShadowsThreshold = ui->txtShadowThreshold->text();
     bool ok2 = false;
     shadowsThreshold = ShadowsThreshold.toInt(&ok2);
-    std::cout << "shadowsThreshold: " << shadowsThreshold << std::endl;
-    if ( ok2 && shadowsThreshold >= 2) {
-        cv::Mat reconstructed = decodeShadowsTL(selectedShadows, shadowsThreshold);
-        // cv::imshow("Reconstructed Image", reconstructed);
-        QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
-        ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+
+    int selectedIndex = ui->dropdownEncodingType->currentIndex(); // Get the selected index from the dropdown
+    switch(selectedIndex){
+        case 0:
+            if (ok2 && shadowsThreshold >= 2) {
+                cv::Mat reconstructed = decodeShadowsTL(selectedShadows, shadowsThreshold);
+                // cv::imshow("Reconstructed Image", reconstructed);
+                QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
+                ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+            }
+            break;
+
+        case 1:
+            if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
+                partitionedShadows.clear();
+                decodedPartitions.clear();
+                partitionedShadows = decomposeShadows(selectedShadows, shadowsAmount, shadowsThreshold);
+                // int k =1;
+                for(int i = 0; i < shadowsAmount; i++){
+                    copiedPartitions.clear();
+                    copiedPartitions = copyShadowsWithNumber(partitionedShadows, i+1);
+
+
+                    cv::Mat reconstructedPartition = decodeShadowsTL(copiedPartitions, shadowsAmount);
+                    decodedPartitions.push_back(reconstructedPartition);
+
+
+                    // if (i == 3){
+                        // for (const auto& shadow : copiedPartitions) {
+                            // std::cout << "Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
+                            // std::string fname = "DECOMPOSED_SHADOWS/DS" + std::to_string(shadow.number) + "_" + std::to_string(shadow.sliceNumber) + ".bmp";
+                            // std::string windowName = cv::format("Partition %d", k);
+                            // k+=1;
+                            // cv::imshow(windowName, shadow.image);
+                            // if (!cv::imwrite(fname, shadow.image)) {
+                                // std::cout << "Error saving image: " << fname << std::endl;
+                            // }
+                        // }
+                        // std::string windowName = cv::format("Partition %d", i + 1);
+                        // cv::imshow(windowName, reconstructedPartition);
+                        // cv::waitKey(0);
+                    // }
+                }
+                cv::Mat reconstructed = mergeSubImages(decodedPartitions);
+                QImage img((uchar*)reconstructed.data, reconstructed.cols, reconstructed.rows, reconstructed.step, QImage::Format_Grayscale8);
+                ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+                // for (const auto& shadow : partitionedShadows) {
+                //     std::cout << "Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
+                //     std::string fname = "DECOMPOSED_SHADOWS/DS" + std::to_string(shadow.number) + "_" + std::to_string(shadow.sliceNumber) + ".bmp";
+                //     if (!cv::imwrite(fname, shadow.image)) {
+                //         std::cerr << "Error saving image: " << fname << std::endl;
+                //     }
+                // }
+                std::cout << "=============================" << std::endl;
+            }
+            break;
+
+        default:
+            QMessageBox::warning(this, "Error", "Invalid selection in encoding type!");
+            break;
     }
 }
 
@@ -218,6 +308,8 @@ void MainWindow::on_btnSelectImage_clicked()
 void MainWindow::on_listGeneratedSh_itemDoubleClicked(QListWidgetItem *item)
 {
     int index = ui->listGeneratedSh->row(item);
+    // std::cout<< "index: " << index << " ,generatedShadows.size(): " << generatedShadows.size() ;
+    // std::cout << std::endl;
     // Check if the index is within the valid range of generatedShadows
     if (index >= 0 && index < generatedShadows.size()) {
         // Open the image in a new Qt window
