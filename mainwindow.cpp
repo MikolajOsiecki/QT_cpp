@@ -126,6 +126,13 @@ void MainWindow::on_btnGenerateShadows_clicked()
     QString ShadowsThreshold = ui->txtShadowThreshold->text();
     bool ok2 = false;
     shadowsThreshold = ShadowsThreshold.toInt(&ok2);
+    QString EssentialNumber = ui->txtNumberOfEssential->text();
+    bool ok3 = false;
+    essentialNumber = EssentialNumber.toInt(&ok3);
+    QString EssentialThreshold = ui->txtEssentialThreshold->text();
+    bool ok4 = false;
+    essentialThreshold = EssentialThreshold.toInt(&ok4);
+    bool usePadding = ui->checkBoxCropPadImage->isChecked();
 
     if (loadedImage.empty()) {
         QMessageBox::warning(this, "Error", "No image loaded or image is empty.");
@@ -162,12 +169,11 @@ void MainWindow::on_btnGenerateShadows_clicked()
         case 1:
             if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
 
-                bool usePadding = ui->checkBoxCropPadImage->isChecked();
                 std::vector<cv::Mat> slices = sliceImageVertically(loadedImage, shadowsAmount, usePadding);
-
                 std::vector<Shadow> allSubShadows;
+                int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
+
                 for (int i = 0; i < slices.size(); ++i) {
-                    int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
                     std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], shadowsAmount, WangLinAmount, i + 1);
                     allSubShadows.insert(allSubShadows.end(), sliceShadows.begin(), sliceShadows.end());
                 }
@@ -196,12 +202,30 @@ void MainWindow::on_btnGenerateShadows_clicked()
             }
             break;
 
-        case 3:
+        case 2:
             // algorithm:
             // 1. use WangLin (k, s+k-t) to generate s+k-t temporary shadows (W1.....Ws+k-t)
             // 2. for each k-t temp shadow Wj (j=s+1,....,s+k-t) generate n subshadows wj,1 .....wj,n using ThienLin (k,n)
             // 3. for i=1,....,s essenital shadows Si are Si = Wi || ws+1,i || .... || ws+k-t,i (subshadow i form each of the k-t subsets of temp shadows)
             //    for i = s+1, .... n normal shadows Si are Si =ws+1,i || .... || ws+k-t,i (same as before but without main temp shadow)
+            if (ok && ok2 && ok3 && ok4
+                && shadowsAmount > 0 && shadowsThreshold >= 1 && shadowsAmount >= shadowsThreshold
+                && essentialNumber > 0  && essentialThreshold >= 1 && essentialNumber >= essentialThreshold
+                && essentialNumber <= shadowsAmount) {
+
+                int sktAmount = essentialNumber + shadowsThreshold - essentialThreshold;
+                std::vector<cv::Mat> slices = sliceImageVertically(loadedImage, sktAmount, usePadding);
+                std::vector<Shadow> allSubShadows;
+
+                for (int i = 0; i < slices.size(); ++i) {
+                    std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], essentialThreshold, sktAmount, i + 1);
+                    allSubShadows.insert(allSubShadows.end(), sliceShadows.begin(), sliceShadows.end());
+                }
+
+                std::vector<Shadow> composedShadows = composeShadows(allSubShadows, shadowsAmount, shadowsThreshold);
+                // std::cout << "allSubShadows number: " << allSubShadows.size() << std::endl;
+
+            }
             break;
 
         default:

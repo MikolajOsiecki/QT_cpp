@@ -65,5 +65,7 @@ private:
     std::vector<std::string> selectedShadowsStrings;    // Hold the selected shadow images as strings
     int shadowsThreshold;
     int shadowsAmount;
+    int essentialThreshold;
+    int essentialNumber;
 };
 #endif // MAINWINDOW_H
