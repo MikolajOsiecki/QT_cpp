@@ -196,13 +196,18 @@ void MainWindow::on_btnGenerateShadows_clicked()
             }
             break;
 
-        // case 2:
-        //     break;
+        case 3:
+            // algorithm:
+            // 1. use WangLin (k, s+k-t) to generate s+k-t temporary shadows (W1.....Ws+k-t)
+            // 2. for each k-t temp shadow Wj (j=s+1,....,s+k-t) generate n subshadows wj,1 .....wj,n using ThienLin (k,n)
+            // 3. for i=1,....,s essenital shadows Si are Si = Wi || ws+1,i || .... || ws+k-t,i (subshadow i form each of the k-t subsets of temp shadows)
+            //    for i = s+1, .... n normal shadows Si are Si =ws+1,i || .... || ws+k-t,i (same as before but without main temp shadow)
+            break;
 
-    default:
-        QMessageBox::warning(this, "Error", "Invalid selection in encoding type!");
-        break;
-    }
+        default:
+            QMessageBox::warning(this, "Error", "Invalid selection in encoding type!");
+            break;
+        }
 
 }
 
@@ -274,6 +279,16 @@ void MainWindow::on_btnDecode_clicked() {
                 std::cout << "=============================" << std::endl;
             }
             break;
+
+
+        case 3:
+            // algorithm (decode), input m shadows with r essential shadows (m>=k, r>=t):
+            // 1. assume that essentail shadows r are S1,...Sr and normal m-r are Ss+1,...,Ss+m-r
+            // 2. reconstruc temp shadows Wj j=s+1,...s+k-t using ThienLin(m) from m inputs wj,1....wj,s+1,....wj,s+m-r
+            // 3. reconstruct r temp shadows W1,...Wr form r essential shadows S1,...Sr (notice Si = Wi || ws+1,i || .... || ws+k-t,i)
+            // 4. generate secret image I using WangLin(r+k-t) from r+k-t input temp shadows W1,....Wr,....Ws+1,...Ws+k-t
+            break;
+
 
         default:
             QMessageBox::warning(this, "Error", "Invalid selection in encoding type!");

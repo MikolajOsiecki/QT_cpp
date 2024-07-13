@@ -284,6 +284,11 @@
       <string>Lin-Wang</string>
      </property>
     </item>
+    <item>
+     <property name="text">
+      <string>Liu-Yang</string>
+     </property>
+    </item>
    </widget>
    <widget class="QCheckBox" name="checkBoxCropPadImage">
     <property name="geometry">
