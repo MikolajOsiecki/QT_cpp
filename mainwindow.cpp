@@ -30,7 +30,6 @@ MainWindow::~MainWindow()
 }
 
 
-
 void MainWindow::on_btnClear_clicked()
 {
     // Get the total number of items in listSelectedSh
@@ -151,6 +150,7 @@ void MainWindow::on_btnGenerateShadows_clicked()
             if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
                 generatedShadows = generateShadowsTL(loadedImage, shadowsThreshold, shadowsAmount);
                 convertShadowsToStr(generatedShadows);
+                changeShadowEssentialValue(generatedShadows, true);
                 // Add each shadow string to the QListWidget
                 for (const auto& shadow : generatedShadows) {
                     QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
@@ -183,8 +183,8 @@ void MainWindow::on_btnGenerateShadows_clicked()
 
                 // Merge composed shadows into the main shadow list
                 generatedShadows.insert(generatedShadows.end(), composedShadows.begin(), composedShadows.end());
-
                 convertShadowsToStr(generatedShadows);
+                changeShadowEssentialValue(generatedShadows, true);
 
                 // Add each shadow string to the QListWidget
                 for (const auto& shadow : generatedShadows) {
@@ -213,18 +213,101 @@ void MainWindow::on_btnGenerateShadows_clicked()
                 && essentialNumber > 0  && essentialThreshold >= 1 && essentialNumber >= essentialThreshold
                 && essentialNumber <= shadowsAmount) {
 
+
+                ///////////////// STEP 1 /////////////////////////
                 int sktAmount = essentialNumber + shadowsThreshold - essentialThreshold;
+                int sktWangLingAmount = 2*sktAmount - shadowsThreshold;
+                std::cout << "sktAmount: " << sktAmount << std::endl;
+                std::cout << "sktWangLingAmount: " << sktWangLingAmount << std::endl;
+
                 std::vector<cv::Mat> slices = sliceImageVertically(loadedImage, sktAmount, usePadding);
-                std::vector<Shadow> allSubShadows;
+                std::vector<Shadow> allTempShadows;
 
                 for (int i = 0; i < slices.size(); ++i) {
-                    std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], essentialThreshold, sktAmount, i + 1);
-                    allSubShadows.insert(allSubShadows.end(), sliceShadows.begin(), sliceShadows.end());
+                    std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], shadowsThreshold, sktWangLingAmount, i + 1);
+                    // int k = 1;
+                    // for (const auto& shadow : allSubShadows) {
+                    //     std::string windowName = cv::format("sliceShadow %d", k);
+                    //     cv::imshow(windowName, shadow.image);
+                    //     k+=1;
+                    // }
+                    allTempShadows.insert(allTempShadows.end(), sliceShadows.begin(), sliceShadows.end());
+                }
+                // std::cout << "allSubShadows size: " << allSubShadows.size() << std::endl;
+                // int k = 1;
+                // for (const auto& shadow : allSubShadows) {
+                //     std::string windowName = cv::format("Partition %d", k);
+                    // cv::imshow(windowName, shadow.image);
+                //     k+=1;
+                // }
+                // std::cout << "COMPOSING SHADOWS: " << sktAmount << std::endl;
+                std::vector<Shadow> temporaryShadows = composeShadows(allTempShadows, sktAmount, shadowsThreshold);
+                // std::cout << "composedShadows size: " << composedShadows.size() << std::endl;
+
+                ///////////////// STEP 2 ////////////////////////
+                std::vector<Shadow> allSubShadows;
+                for(int i = essentialNumber + 1; i <=sktAmount; i++){
+                    // iterator i could be without +1 but this way it is same as in original article (there it is s+1)
+                    std::vector<Shadow> subShadows = generateShadowsTL(temporaryShadows[i-1].image, shadowsThreshold, shadowsAmount, i);
+                    allSubShadows.insert(allSubShadows.end(), subShadows.begin(), subShadows.end());
+
+                    for (const auto& shadow : subShadows) {
+                        std::cout << "subShadow number: " << shadow.number << " subShadow sliceNumber: " << shadow.sliceNumber << std::endl;
+                        // cv::imshow("subshadow", shadow.image);
+                        // cv::waitKey();
+                    }
                 }
 
-                std::vector<Shadow> composedShadows = composeShadows(allSubShadows, shadowsAmount, shadowsThreshold);
-                // std::cout << "allSubShadows number: " << allSubShadows.size() << std::endl;
+                ///////////////// STEP 3 ////////////////////////
+                //Essential Shadows
+                std::cout << "Essential Shadows " << std::endl;
+                for(int i = 0; i < essentialNumber; i++){
+                    std::vector<cv::Mat> essentialShadowComponents;
+                    essentialShadowComponents.push_back(temporaryShadows[i].image);
 
+                    std::vector<Shadow> selectedShadowNumber = copyShadowsWithNumber(allSubShadows, i+1);
+
+                    for (const auto& shadow : selectedShadowNumber) {
+                        std::cout << "selectedShadowNumber number: " << shadow.number << " selectedShadowNumber sliceNumber: " << shadow.sliceNumber << std::endl;
+                        essentialShadowComponents.push_back(shadow.image);
+                    }
+
+                    cv::Mat essentialShadow = mergeSubImages(essentialShadowComponents);
+                    generatedShadows.push_back({essentialShadow, true, "", i+1, -1});
+                }
+
+                //Normal Shadows
+                std::cout << "Normal Shadows " << std::endl;
+                for(int i = essentialNumber; i < shadowsAmount; i++){
+                    std::vector<cv::Mat> normalShadowComponents;
+
+                    std::vector<Shadow> selectedShadowNumber = copyShadowsWithNumber(allSubShadows, i+1);
+
+                    for (const auto& shadow : selectedShadowNumber) {
+                        std::cout << "selectedShadowNumber nromal number: " << shadow.number << " selectedShadowNumber nromal sliceNumber: " << shadow.sliceNumber << std::endl;
+                        normalShadowComponents.push_back(shadow.image);
+                    }
+
+                    cv::Mat normalShadow = mergeSubImages(normalShadowComponents);
+                    generatedShadows.push_back({normalShadow, false, "", i+1, -1});
+                }
+
+                // generatedShadows.insert(generatedShadows.end(), allSubShadows.begin(), allSubShadows.end());
+                convertShadowsToStr(generatedShadows);
+
+                // Add each shadow string to the QListWidget
+                for (const auto& shadow : generatedShadows) {
+                    QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
+
+                    if (shadow.isEssential) {
+                        newItem->setBackground(Qt::red);  // Set background color to red
+                    }
+
+                    ui->listGeneratedSh->addItem(newItem);
+                }
+
+            } else {
+                QMessageBox::warning(this, "Error", "Invalid parameters!");
             }
             break;
 
@@ -267,7 +350,7 @@ void MainWindow::on_btnDecode_clicked() {
                 // int k =1;
                 for(int i = 0; i < shadowsAmount; i++){
                     copiedPartitions.clear();
-                    copiedPartitions = copyShadowsWithNumber(partitionedShadows, i+1);
+                    copiedPartitions = copyShadowsWithSliceNumber(partitionedShadows, i+1);
 
 
                     cv::Mat reconstructedPartition = decodeShadowsTL(copiedPartitions, shadowsAmount);
@@ -300,7 +383,7 @@ void MainWindow::on_btnDecode_clicked() {
                 //         std::cerr << "Error saving image: " << fname << std::endl;
                 //     }
                 // }
-                std::cout << "=============================" << std::endl;
+                // std::cout << "=============================" << std::endl;
             }
             break;
 

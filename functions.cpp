@@ -144,7 +144,7 @@ std::vector<Shadow> composeShadows(const std::vector<Shadow>& allSubShadows, int
     for (int i = 0; i < shadowsAmount; ++i) {
         // std::cout << "Now processing i == " << i << std::endl;
         Shadow composedShadow;
-        composedShadow.isEssential = true;
+        composedShadow.isEssential = false;
         composedShadow.number = i + 1;
         composedShadow.sliceNumber = -1; // This is a composed shadow, not from a specific slice
         int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
@@ -197,7 +197,7 @@ std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows,
             if (j == i) {
                 for (int k = j; k < j +  shadowsAmount - shadowsThreshold + 1; ++k) {
                     Shadow subShadow;
-                    subShadow.isEssential = true;
+                    subShadow.isEssential = false;
                     subShadow.sliceNumber = j + 1;
                     subShadow.number = k + 1;
                     subShadow.image = slices[k];
@@ -209,7 +209,7 @@ std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows,
             // j==i has same as in composeShadows minus the offset and these two dont. it just works
             } else if (j > i) {
                 Shadow subShadow;
-                subShadow.isEssential = true;
+                subShadow.isEssential = false;
                 subShadow.sliceNumber = j + 1;
                 subShadow.number = i + 1;
                 subShadow.image = slices[j+ shadowsAmount - shadowsThreshold];
@@ -218,7 +218,7 @@ std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows,
                 allSubShadows.push_back(subShadow);
             } else {
                 Shadow subShadow;
-                subShadow.isEssential = true;
+                subShadow.isEssential = false;
                 subShadow.sliceNumber = j + 1;
                 subShadow.number = i + 1 + shadowsAmount - shadowsThreshold;
                 subShadow.image = slices[j];
@@ -233,7 +233,7 @@ std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows,
 }
 
 
-std::vector<Shadow> copyShadowsWithNumber(const std::vector<Shadow>& shadows, int specifiedNumber) {
+std::vector<Shadow> copyShadowsWithSliceNumber(const std::vector<Shadow>& shadows, int specifiedNumber) {
     std::vector<Shadow> result;
 
     for (const auto& shadow : shadows) {
@@ -244,4 +244,28 @@ std::vector<Shadow> copyShadowsWithNumber(const std::vector<Shadow>& shadows, in
     }
 
     return result;
+}
+
+
+std::vector<Shadow> copyShadowsWithNumber(const std::vector<Shadow>& shadows, int specifiedNumber) {
+    std::vector<Shadow> result;
+
+    for (const auto& shadow : shadows) {
+        if (shadow.number == specifiedNumber) {
+            // std::cout << "Copied Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
+            result.push_back(shadow);
+        }
+    }
+
+    return result;
+}
+
+
+
+void changeShadowEssentialValue(std::vector<Shadow>& shadows, bool isEssential) {
+    for (auto& shadow : shadows) {
+        shadow.isEssential = isEssential;
+    }
+
+    return;
 }

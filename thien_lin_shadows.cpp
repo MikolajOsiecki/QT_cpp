@@ -86,7 +86,7 @@ void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, 
             std::cerr << "Error saving image: " << fname << std::endl;
         }
 
-        shadows.push_back({img, true, "", R + 1});
+        shadows.push_back({img, false, "", R + 1});
 
         // Print the Shadow struct
         // std::cout << "Shadow " << R + 1 << " added: "
@@ -112,7 +112,7 @@ void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, 
             std::cerr << "Error saving image: " << fname << std::endl;
         }
 
-        shadows.push_back({img, true, "", R + 1, sliceNumber});
+        shadows.push_back({img, false, "", R + 1, sliceNumber});
 
         // Print the Shadow struct
         // std::cout << "Shadow " << R + 1 << " added: "
