@@ -32,6 +32,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         functions.h
         thien_lin_shadows.cpp
         thien_lin_shadows.h
+        img_sources.qrc
+        helpdialog.h helpdialog.cpp helpdialog.ui
+
+
+
 
     )
 # Define target properties for Android with Qt 6 as:

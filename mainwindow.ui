@@ -324,6 +324,7 @@
      <string>About</string>
     </property>
     <addaction name="actionAuthor"/>
+    <addaction name="actionAbout_Schemes"/>
     <addaction name="actionAbout_Gui"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -349,6 +350,11 @@
   <action name="actionHelp">
    <property name="text">
     <string>Help</string>
+   </property>
+  </action>
+  <action name="actionAbout_Schemes">
+   <property name="text">
+    <string>About Schemes</string>
    </property>
   </action>
  </widget>

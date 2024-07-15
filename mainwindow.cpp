@@ -3,7 +3,9 @@
 #include "functions.h"
 #include "thien_lin_shadows.h"
 #include <opencv2/highgui/highgui.hpp>
-#include <QMessageBox>  // Ensure to include QMessageBox
+#include <QMessageBox>
+
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -32,6 +34,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_btnClear_clicked()
 {
+
     // Get the total number of items in listSelectedSh
     int itemCount = ui->listSelectedSh->count();
 
@@ -292,7 +295,7 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     generatedShadows.push_back({normalShadow, false, "", i+1, -1});
                 }
 
-                // generatedShadows.insert(generatedShadows.end(), allSubShadows.begin(), allSubShadows.end());
+                // generatedShadows.insert(generatedShadows.end(), allSubShadows.begin(), allSuQMessageBoxbShadows.end());
                 convertShadowsToStr(generatedShadows);
 
                 // Add each shadow string to the QListWidget
@@ -324,6 +327,10 @@ void MainWindow::on_btnDecode_clicked() {
         QMessageBox::warning(this, "Error", "No shadows selected for decoding.");
         return;  // Stop execution of the function if no shadows are selected
     }
+
+    ui->picDecoded->setPixmap(loadingImg.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    QCoreApplication::processEvents(); // Process pending events, including the GUI update, this will make sure that loading img is displayed proprely
+
     QString ShadowsNumber = ui->txtNumberOfShadows->text();
     bool ok = false;
     shadowsAmount = ShadowsNumber.toInt(&ok);
@@ -468,7 +475,8 @@ void MainWindow::on_listSelectedSh_itemDoubleClicked(QListWidgetItem *item)
 
 void MainWindow::on_actionHelp_triggered()
 {
-    //TODO: Implement help dialog
+    helpDialog = new HelpDialog(this);
+    helpDialog->show();
 }
 
 
@@ -490,3 +498,43 @@ void MainWindow::on_actionAbout_Gui_triggered()
 {
     QApplication::aboutQt();
 }
+
+void MainWindow::on_actionAbout_Schemes_triggered()
+{
+    QMessageBox::information(this, "About Schemes",
+    "<b>Thien-Lin scheme</b>"
+    "<br>"
+    "<b>k</b> - threshold value"
+    "<br>"
+    "<b>n</b> - shadow amount value"
+    "<br>"
+    "<b>Lin-Wang scheme</b>"
+    "<br>"
+    "Input image is divided into <b>n</b> disjoint partitions of equal size of <i>I/n</i> where <i>I</i> is input image size (in this program partitions are vertical slices)."
+    "Next, each image partition is encoded into <i>2n-t</i> partition shadows using Thien-Lin <i>(n,2n-t)</i> scheme."
+    "Main shadows are created so that each of them holds <i>n-t+1</i> partition shadows of one image partition, and <i>n-1</i> partition shadows from other <i>n-1</i> partitions"
+    "<br>"
+    "In essence, this means the bigger the amount of shadows used in decoding, the bigger part of original image is decoded."
+    "<br>"
+    "<b>k</b> - threshold value"
+    "<br>"
+    "<b>n</b> - shadow amount value"
+    "<br>"
+    "<b>Liu-Yang scheme</b>"
+    "<br>"
+    "Input image is encoded into <i>s+k-t</i> temporary shadows using Lin-Wang scheme. Then, for each <i>k-t</i> temporary shadowm <i>n</i> amount of sub-temporary shadows are created."
+    "<i>s</i> amount of essential shadows contain one temporary shadow, and <i>s+k-t</i> sub-temporary shadows, while non-essential shadows contain only <i>s+k-t</i> sub-temporary shadows."
+    "<br>"
+    "When attempting to decode image using <i>x</i> amount of essential shadows that is <i>t &le; x &lt; s</i> and any amount of non-essential shadows so that total amount <i>z</i> is <i>z &ge; k</i>,"
+    "will result in partial decoding of image. When using amount of essential shadows that is <i>x = s</i> and total amount of shadows is <i>z &le; k</i>, will result in full reconstruction of image."
+    "<br>"
+    "<b>t</b> - essential shadows hreshold value"
+    "<br>"
+    "<b>s</b> - essential shadows amount value"
+    "<br>"
+    "<b>k</b> - total threshold value"
+    "<br>"
+    "<b>n</b> - total shadow amount value"
+    );
+}
+
