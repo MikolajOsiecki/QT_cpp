@@ -260,12 +260,50 @@ std::vector<Shadow> copyShadowsWithNumber(const std::vector<Shadow>& shadows, in
     return result;
 }
 
+/**
+ * @param shadows: A vector containing shadows
+ * @param returnEssential: If true return only essential, otherwise only non-essential
+ * @return A vector containing the selected shadows (shadowsAmount in total)
+*/
+std::vector<Shadow> copyEssentialShadows (const std::vector<Shadow>& shadows, bool returnEssential) {
+    std::vector<Shadow> result;
+
+    for (const auto& shadow : shadows) {
+        if (shadow.isEssential == returnEssential) {
+            result.push_back(shadow);
+        }
+    }
+
+    return result;
+}
 
 
 void changeShadowEssentialValue(std::vector<Shadow>& shadows, bool isEssential) {
     for (auto& shadow : shadows) {
         shadow.isEssential = isEssential;
     }
-
     return;
+}
+
+std::vector<Shadow> getSubTempShadows (const std::vector<Shadow>& shadows, int essentialThreshold, int essentialNumber, int shadowsThreshold) {
+    int sktAmount = essentialNumber + shadowsThreshold - essentialThreshold;
+    int sktWangLingAmount = 2*sktAmount - shadowsThreshold;
+    std::vector<Shadow> result;
+    std::cout << "Partitioning "  << std::endl;
+    for(const auto& shadow : shadows){
+        if(shadow.isEssential == true){
+            std::cout << "Slicing "  << std::endl;
+            std::vector<cv::Mat> slices = sliceImageVertically(shadow.image,sktWangLingAmount);
+            int k = 1;
+            std::cout << "slcies size= "<< slices.size()  << std::endl;
+            for(const auto& image : slices){
+                std::cout << "k=  "  << k << std::endl;
+                std::string windowName = cv::format("slice %d", k);
+                std::cout << "windowname=  "  << windowName << std::endl;
+                cv::imshow(windowName, image);
+                k++;
+            }
+        }
+    }
+    return result;
 }

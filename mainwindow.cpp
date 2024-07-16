@@ -295,7 +295,7 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     generatedShadows.push_back({normalShadow, false, "", i+1, -1});
                 }
 
-                // generatedShadows.insert(generatedShadows.end(), allSubShadows.begin(), allSuQMessageBoxbShadows.end());
+                // generatedShadows.insert(generatedShadows.end(), allSubShadows.begin(), allSubShadows.end());
                 convertShadowsToStr(generatedShadows);
 
                 // Add each shadow string to the QListWidget
@@ -303,7 +303,7 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
 
                     if (shadow.isEssential) {
-                        newItem->setBackground(Qt::red);  // Set background color to red
+                        newItem->setBackground(Qt::green);  // Set background color to red
                     }
 
                     ui->listGeneratedSh->addItem(newItem);
@@ -337,6 +337,12 @@ void MainWindow::on_btnDecode_clicked() {
     QString ShadowsThreshold = ui->txtShadowThreshold->text();
     bool ok2 = false;
     shadowsThreshold = ShadowsThreshold.toInt(&ok2);
+    QString EssentialNumber = ui->txtNumberOfEssential->text();
+    bool ok3 = false;
+    essentialNumber = EssentialNumber.toInt(&ok3);
+    QString EssentialThreshold = ui->txtEssentialThreshold->text();
+    bool ok4 = false;
+    essentialThreshold = EssentialThreshold.toInt(&ok4);
 
     int selectedIndex = ui->dropdownEncodingType->currentIndex(); // Get the selected index from the dropdown
     switch(selectedIndex){
@@ -395,12 +401,25 @@ void MainWindow::on_btnDecode_clicked() {
             break;
 
 
-        case 3:
+        case 2:
             // algorithm (decode), input m shadows with r essential shadows (m>=k, r>=t):
             // 1. assume that essentail shadows r are S1,...Sr and normal m-r are Ss+1,...,Ss+m-r
             // 2. reconstruc temp shadows Wj j=s+1,...s+k-t using ThienLin(m) from m inputs wj,1....wj,s+1,....wj,s+m-r
             // 3. reconstruct r temp shadows W1,...Wr form r essential shadows S1,...Sr (notice Si = Wi || ws+1,i || .... || ws+k-t,i)
             // 4. generate secret image I using WangLin(r+k-t) from r+k-t input temp shadows W1,....Wr,....Ws+1,...Ws+k-t
+            if (ok && ok2 && ok3 && ok4
+                && shadowsAmount > 0 && shadowsThreshold >= 1 && shadowsAmount >= shadowsThreshold
+                && essentialNumber > 0  && essentialThreshold >= 1 && essentialNumber >= essentialThreshold
+                && essentialNumber <= shadowsAmount) {
+
+                std::vector<Shadow> essentialShadows = copyEssentialShadows(selectedShadows, true);
+                std::vector<Shadow> nonessentialShadows = copyEssentialShadows(selectedShadows, false);
+                std::vector<Shadow> essentialPartitions = getSubTempShadows(essentialShadows, essentialThreshold, essentialNumber, shadowsThreshold);
+            }
+
+
+                ///////////////// STEP 1 /////////////////////////
+
             break;
 
 

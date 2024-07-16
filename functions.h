@@ -24,7 +24,8 @@ std::vector<Shadow> composeShadows(const std::vector<Shadow>& allSubShadows, int
 std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows, int shadowsAmount, int shadowsThreshold);
 std::vector<Shadow> copyShadowsWithNumber(const std::vector<Shadow>& shadows, int specifiedNumber);
 std::vector<Shadow> copyShadowsWithSliceNumber(const std::vector<Shadow>& shadows, int specifiedNumber);
-
+std::vector<Shadow> copyEssentialShadows (const std::vector<Shadow>& shadows, bool returnEssential);
+std::vector<Shadow> getSubTempShadows (const std::vector<Shadow>& shadows, int essentialThreshold, int essentialNumber, int shadowsThreshold);
 
 class ImageViewer : public QWidget
 {
