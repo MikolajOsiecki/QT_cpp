@@ -3,7 +3,7 @@
 #include <QApplication>
 #include<QMenuBar>
 
-
+int globalTempShadowSize = 0; // in a perfect world, a variable like me would not exist
 void clear_directory(const std::filesystem::path& dir_path) {
     if (!std::filesystem::exists(dir_path)) {
         std::cerr << "Directory does not exist: " << dir_path << std::endl;

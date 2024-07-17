@@ -5,6 +5,7 @@
 #include <string>
 // #include <iostream>
 
+extern int globalTempShadowSize; // in a perfect world, a variable like me would not exist
 
 std::vector<std::string> generatePlaceholder(int amount, int selected_encoding) {
     std::vector<std::string> generated_shadows_list;
@@ -100,6 +101,7 @@ std::vector<cv::Mat> sliceImageVertically(const cv::Mat& image, int n, bool useP
     } else {
         processedImage = cropImage(image, n);
     }
+    std::cout << "processedImage size: " << processedImage.cols << "x" << processedImage.rows << std::endl;
 
     std::vector<cv::Mat> slices;
     int sliceWidth = processedImage.cols / n;
@@ -302,31 +304,116 @@ void changeShadowEssentialValue(std::vector<Shadow>& shadows, bool isEssential) 
 */
 int calculateDeltaS(const cv::Mat& Se, int k, int t) {
     // Calculate total number of pixels in the image
-    int totalPixels = Se.rows * Se.cols;
+    std::cout << "deltaS calc k: "<< k << std::endl;
+    std::cout << "deltaS calc t: "<< t  << std::endl;
 
+    int totalPixels = Se.rows * Se.cols;
+    std::cout << "deltaS calc totalPixels: "<< totalPixels << std::endl;
     // Calculate delta S using the provided formula
     int deltaS = std::abs(totalPixels * k) / (2 * k - t);
+    std::cout << "deltaS calc deltaS: "<< deltaS << std::endl;
     return deltaS;
 }
 
 
-cv::Mat cropImageByDeltaS(const cv::Mat& inputImage, int deltaS) {
+int calculateNonEssentialSize(const cv::Mat& Se, int k, int t) {
+    // Calculate total number of pixels in the image
+    std::cout << "deltaS calc k: "<< k << std::endl;
+    std::cout << "deltaS calc t: "<< t  << std::endl;
 
-    // Calculate the number of rows and columns in the input image
+    int totalPixels = Se.rows * Se.cols;
+    std::cout << "deltaS calc totalPixels: "<< totalPixels << std::endl;
+    // Calculate delta S using the provided formula
+    int deltaS = (totalPixels * (k - t)) / (2 * k - t);
+    std::cout << "deltaS calc deltaS: "<< deltaS << std::endl;
+    return deltaS;
+}
+
+
+// cv::Mat extractTempShadowFromEssential(const cv::Mat& inputImage, int deltaS) {
+//     int rows = inputImage.rows;
+//     int targetCols = deltaS / rows;
+
+//     std::cout << "targetCols value: " << targetCols << std::endl;
+
+//     cv::Rect roi(0, 0, targetCols, rows);
+//     cv::Mat croppedImage = inputImage(roi).clone();
+
+//     return croppedImage;
+// }
+
+
+cv::Mat extractTempShadowFromEssential(const cv::Mat& inputImage, int deltaS) {
     int rows = inputImage.rows;
-    int cols = inputImage.cols;
 
-    // Calculate the number of columns to keep based on deltaS
-    int targetCols = deltaS / rows;
-    std::cout << "targetCols value: " << targetCols << std::endl;
+    std::cout << "targetCols value: " << deltaS << std::endl;
 
-
-    // Create a new cv::Rect to define the region of interest
-    cv::Rect roi(0, 0, targetCols, rows);
-
-    // Crop the image using the roi
+    cv::Rect roi(0, 0, deltaS, rows);
     cv::Mat croppedImage = inputImage(roi).clone();
-    // cv::Mat croppedImage = inputImage;
+
+    return croppedImage;
+}
+
+
+// cv::Mat extractAllSubTempShadowFromEssential(const cv::Mat& inputImage, int deltaS) {
+//     int rows = inputImage.rows;
+//     int targetCols = deltaS / rows;
+//     int remainingCols = inputImage.cols - targetCols;
+
+//     std::cout << "remainingCols value: " << remainingCols << std::endl;
+
+//     cv::Rect roi(targetCols, 0, remainingCols, rows);
+//     cv::Mat croppedImage = inputImage(roi).clone();
+//     std::cout << "croppedImage size: " << croppedImage.cols << "x" << croppedImage.rows << std::endl;
+
+//     return croppedImage;
+// }
+
+
+cv::Mat extractAllSubTempShadowFromEssential(const cv::Mat& inputImage, int deltaS) {
+    int rows = inputImage.rows;
+    int remainingCols = inputImage.cols - deltaS;
+
+    std::cout << "remainingCols value: " << remainingCols << std::endl;
+
+    cv::Rect roi(deltaS, 0, remainingCols, rows);
+    cv::Mat croppedImage = inputImage(roi).clone();
+    std::cout << "croppedImage size: " << croppedImage.cols << "x" << croppedImage.rows << std::endl;
+
+    return croppedImage;
+}
+
+
+// cv::Mat extractAllSubTempShadowFromEssentialRight(const cv::Mat& inputImage, int deltaS) {
+//     int rows = inputImage.rows;
+//     int targetCols = deltaS / rows;
+//     int remainingCols = inputImage.cols - targetCols;
+
+//     std::cout << "remainingCols value: " << remainingCols << std::endl;
+
+//     // Calculate the starting column for the ROI from the right edge
+//     int startCol = inputImage.cols - remainingCols;
+
+//     cv::Rect roi(startCol, 0, remainingCols, rows);
+//     cv::Mat croppedImage = inputImage(roi).clone();
+//     std::cout << "croppedImage size: " << croppedImage.cols << "x" << croppedImage.rows << std::endl;
+
+//     return croppedImage;
+// }
+
+
+cv::Mat extractAllSubTempShadowFromEssentialRight(const cv::Mat& inputImage, int deltaS) {
+    int rows = inputImage.rows;
+    int remainingCols = inputImage.cols - deltaS;
+
+    std::cout << "remainingCols value: " << remainingCols << std::endl;
+
+    // Calculate the starting column for the ROI from the right edge
+    int startCol = inputImage.cols - remainingCols;
+
+    cv::Rect roi(startCol, 0, remainingCols, rows);
+    cv::Mat croppedImage = inputImage(roi).clone();
+    std::cout << "croppedImage size: " << croppedImage.cols << "x" << croppedImage.rows << std::endl;
 
     return croppedImage;
 }
@@ -336,25 +423,54 @@ std::vector<Shadow> getSubTempShadows (const std::vector<Shadow>& shadows, int e
     int sktAmount = essentialNumber + shadowsThreshold - essentialThreshold;
     int sktWangLingAmount = 2*sktAmount - shadowsThreshold;
     std::vector<Shadow> result;
+    std::vector<Shadow> extractedAllTempShadow;
+    std::vector<Shadow> extractedAllSubTempShadow;
+
     // std::cout << "Partitioning "  << std::endl;
     for(const auto& shadow : shadows){
         if(shadow.isEssential == true){
             // std::cout << "Slicing "  << std::endl;
-            int deltaS = calculateDeltaS(shadow.image, shadowsThreshold, essentialThreshold);
-            std::cout << "DeltaS value: " << deltaS << std::endl;
+            // int deltaS = calculateDeltaS(shadow.image, shadowsThreshold, essentialThreshold);
+            // std::cout << "deltaS: " << deltaS << std::endl;
 
-            cv::Mat extracted = cropImageByDeltaS(shadow.image, deltaS);
-            cv::imshow("extracted", extracted);
-            // int k = 1;
-            // // std::cout << "slcies size= "<< slices.size()  << std::endl;
-            // for(const auto& image : slices){
-            //     std::cout << "k=  "  << k << std::endl;
-            //     std::string windowName = cv::format("slice %d", k);
-            //     std::cout << "windowname=  "  << windowName << std::endl;
-            //     cv::imshow(windowName, image);
-            //     k++;
-            // }
+            // std::cout << "shadowImage size: " << shadow.image.cols << "x" << shadow.image.rows << std::endl;
+
+            cv::Mat extractedTempShadow = extractTempShadowFromEssential(shadow.image, globalTempShadowSize);
+            extractedAllTempShadow.push_back({extractedTempShadow, false, "", shadow.number, shadow.sliceNumber });
+            cv::imshow("extracted Temp", extractedTempShadow);
+            // std::cout << "extractedTempShadow size: " << extractedTempShadow.cols << "x" << extractedTempShadow.rows << std::endl;
+
+
+            cv::Mat extractedSubTempShadow = extractAllSubTempShadowFromEssentialRight(shadow.image, globalTempShadowSize);
+            std::vector<cv::Mat> slicedSubTempShadows = sliceImageVertically(extractedSubTempShadow, (shadowsThreshold  - essentialThreshold));
+            for(int i = 0; i < slicedSubTempShadows.size(); i++){
+                extractedAllSubTempShadow.push_back({slicedSubTempShadows[i], false, "", shadow.number, (shadowsThreshold  - essentialThreshold + 1 + i) });
+            }
+            // cv::imshow("extracted SubTemp", extractedSubTempShadow);
+            // std::cout << "extractedSubTempShadow size: " << extractedSubTempShadow.cols << "x" << extractedSubTempShadow.rows << std::endl;
+
+
+
+
+
         }
+    }
+    int k = 1;
+    // std::cout << "slcies size= "<< slices.size()  << std::endl;
+    for(const auto& shadow : extractedAllSubTempShadow){
+        std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
+        std::string windowName = cv::format("slice %d", k);
+        cv::imshow(windowName, shadow.image);
+        k++;
+    }
+
+    int m = 1;
+    // std::cout << "slcies size= "<< slices.size()  << std::endl;
+    for(const auto& shadow : extractedAllTempShadow){
+        std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
+        std::string windowName = cv::format("slice %d", m);
+        cv::imshow(windowName, shadow.image);
+        m++;
     }
     return result;
 }

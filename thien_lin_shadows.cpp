@@ -9,6 +9,7 @@ void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, 
 void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows, int sliceNumber);
 
 std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N) {
+
     int H = inputImage.rows;
     int W = inputImage.cols / K;
 
@@ -23,6 +24,8 @@ std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N) {
 
 
 std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N, int sliceNumber) {
+    std::cout << "generateShadowsTL input Size: " << inputImage.size() << std::endl;
+
     int H = inputImage.rows;
     int W = inputImage.cols / K;
 
@@ -31,7 +34,9 @@ std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N, i
 
     std::vector<Shadow> shadows;
     saveImages(C, H, W, N, shadows, sliceNumber);
-
+    for (const auto& shadow : shadows) {
+        std::cout << "generateShadowsTL shadow Size: " << shadow.image.size() << std::endl;
+    }
     return shadows;
 }
 

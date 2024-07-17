@@ -5,6 +5,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <QMessageBox>
 
+extern int globalTempShadowSize; // in a perfect world, a variable like me would not exist
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -178,6 +179,8 @@ void MainWindow::on_btnGenerateShadows_clicked()
 
                 for (int i = 0; i < slices.size(); ++i) {
                     std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], shadowsAmount, WangLinAmount, i + 1);
+                    // std::cout << "sliceShadowsAmount: " << sliceShadows.size() << std::endl;
+
                     allSubShadows.insert(allSubShadows.end(), sliceShadows.begin(), sliceShadows.end());
                 }
 
@@ -224,17 +227,21 @@ void MainWindow::on_btnGenerateShadows_clicked()
                 std::cout << "sktWangLingAmount: " << sktWangLingAmount << std::endl;
 
                 std::vector<cv::Mat> slices = sliceImageVertically(loadedImage, sktAmount, usePadding);
+                std::cout << "slices Amount: " << slices.size() << std::endl;
                 std::vector<Shadow> allTempShadows;
 
                 for (int i = 0; i < slices.size(); ++i) {
-                    std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], shadowsThreshold, sktWangLingAmount, i + 1);
+                    std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], sktAmount, sktWangLingAmount, i + 1);
+                    std::cout << "sliceShadows Amount: " << sliceShadows.size() << std::endl;
+
                     // int k = 1;
-                    // for (const auto& shadow : allSubShadows) {
+                    // for (const auto& shadow : sliceShadows) {
                     //     std::string windowName = cv::format("sliceShadow %d", k);
                     //     cv::imshow(windowName, shadow.image);
                     //     k+=1;
                     // }
                     allTempShadows.insert(allTempShadows.end(), sliceShadows.begin(), sliceShadows.end());
+                    cv::waitKey(0);
                 }
                 // std::cout << "allSubShadows size: " << allSubShadows.size() << std::endl;
                 // int k = 1;
@@ -245,6 +252,10 @@ void MainWindow::on_btnGenerateShadows_clicked()
                 // }
                 // std::cout << "COMPOSING SHADOWS: " << sktAmount << std::endl;
                 std::vector<Shadow> temporaryShadows = composeShadows(allTempShadows, sktAmount, shadowsThreshold);
+                globalTempShadowSize = temporaryShadows[0].image.cols;      // take whatever col number, can be first
+                for (const auto& shadow : temporaryShadows) {
+                    std::cout << "temporaryShadows size: " << shadow.image.size() << std::endl;
+                }
                 // std::cout << "composedShadows size: " << composedShadows.size() << std::endl;
 
                 ///////////////// STEP 2 ////////////////////////
@@ -255,15 +266,18 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     allSubShadows.insert(allSubShadows.end(), subShadows.begin(), subShadows.end());
 
                     for (const auto& shadow : subShadows) {
-                        std::cout << "subShadow number: " << shadow.number << " subShadow sliceNumber: " << shadow.sliceNumber << std::endl;
+                        // std::cout << "subShadows size: " << shadow.image.size() << std::endl;
+                        // std::cout << "subShadow number: " << shadow.number << " subShadow sliceNumber: " << shadow.sliceNumber << std::endl;
                         // cv::imshow("subshadow", shadow.image);
                         // cv::waitKey();
                     }
+                    // std::cout << "===================== " << std::endl;
+
                 }
 
                 ///////////////// STEP 3 ////////////////////////
                 //Essential Shadows
-                std::cout << "Essential Shadows " << std::endl;
+                // std::cout << "Essential Shadows " << std::endl;
                 for(int i = 0; i < essentialNumber; i++){
                     std::vector<cv::Mat> essentialShadowComponents;
                     essentialShadowComponents.push_back(temporaryShadows[i].image);
@@ -271,23 +285,24 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     std::vector<Shadow> selectedShadowNumber = copyShadowsWithNumber(allSubShadows, i+1);
 
                     for (const auto& shadow : selectedShadowNumber) {
-                        std::cout << "selectedShadowNumber number: " << shadow.number << " selectedShadowNumber sliceNumber: " << shadow.sliceNumber << std::endl;
+                        // std::cout << "selectedShadowNumber number: " << shadow.number << " selectedShadowNumber sliceNumber: " << shadow.sliceNumber << std::endl;
                         essentialShadowComponents.push_back(shadow.image);
                     }
+                    // std::cout << "===================== " << std::endl;
 
                     cv::Mat essentialShadow = mergeSubImages(essentialShadowComponents);
                     generatedShadows.push_back({essentialShadow, true, "", i+1, -1});
                 }
 
                 //Normal Shadows
-                std::cout << "Normal Shadows " << std::endl;
+                // std::cout << "Normal Shadows " << std::endl;
                 for(int i = essentialNumber; i < shadowsAmount; i++){
                     std::vector<cv::Mat> normalShadowComponents;
 
                     std::vector<Shadow> selectedShadowNumber = copyShadowsWithNumber(allSubShadows, i+1);
 
                     for (const auto& shadow : selectedShadowNumber) {
-                        std::cout << "selectedShadowNumber nromal number: " << shadow.number << " selectedShadowNumber nromal sliceNumber: " << shadow.sliceNumber << std::endl;
+                        // std::cout << "selectedShadowNumber nromal number: " << shadow.number << " selectedShadowNumber nromal sliceNumber: " << shadow.sliceNumber << std::endl;
                         normalShadowComponents.push_back(shadow.image);
                     }
 
