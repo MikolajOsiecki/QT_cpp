@@ -94,6 +94,66 @@ cv::Mat cropImage(const cv::Mat& image, int n) {
 }
 
 
+// Function to calculate the Least Common Multiple (LCM)
+int lcm(int a, int b) {
+    return (a * (b / std::gcd(a, b)));
+}
+
+
+cv::Mat extremePadAndCrop(const cv::Mat &image, int X, int sktWangLingAmount, int shadowsThreshold, bool usePadding) {
+    int rows = image.rows;
+    int cols = image.cols;
+
+    // Step 1: Ensure that the image width is divisible by X
+    int initialCols = (cols % X == 0) ? cols : cols + (X - (cols % X));
+
+    // Step 2: Ensure that the resulting width after dividing by X is also divisible by X
+    int intermediateWidth = initialCols / X;
+    intermediateWidth = (intermediateWidth % X == 0) ? intermediateWidth : intermediateWidth + (X - (intermediateWidth % X));
+    int finalIntermediateWidth = intermediateWidth * X;
+
+    // Step 3: Ensure that the final `temporaryShadow` is divisible by shadowsThreshold
+    int temporaryShadowWidth = intermediateWidth * sktWangLingAmount;
+    temporaryShadowWidth = (temporaryShadowWidth % shadowsThreshold == 0) ? temporaryShadowWidth : temporaryShadowWidth + (shadowsThreshold - (temporaryShadowWidth % shadowsThreshold));
+    int finalTemporaryShadowWidth = (temporaryShadowWidth / sktWangLingAmount) * X;
+
+    // Step 4: Calculate the LCM of both widths to ensure both conditions are met
+    int finalCols = lcm(finalIntermediateWidth, finalTemporaryShadowWidth);
+
+    // Step 5: Ensure finalCols is divisible by X
+    finalCols = (finalCols % X == 0) ? finalCols : finalCols + (X - (finalCols % X));
+    std::cout << "finalCols size: " << finalCols << std::endl;
+
+    // Always pad the image to the calculated finalCols
+    cv::Mat paddedImage;
+    cv::copyMakeBorder(image, paddedImage, 0, 0, 0, finalCols - cols, cv::BORDER_CONSTANT, cv::Scalar(0));
+
+    return paddedImage;
+}
+
+std::vector<cv::Mat> sliceExtremeImageVertically(const cv::Mat& image, int n, int sktWangLingAmount, int shadowsThreshold, bool usePadding = false) {
+    cv::Mat processedImage = extremePadAndCrop(image, n, sktWangLingAmount, shadowsThreshold, usePadding);
+    std::cout << "processedImage size: " << processedImage.size() << std::endl;
+
+    std::vector<cv::Mat> slices;
+    int sliceWidth = processedImage.cols / n;
+
+    for (int i = 0; i < n; ++i) {
+        int startCol = i * sliceWidth;
+        int endCol = startCol + sliceWidth;
+
+        cv::Rect sliceRegion(startCol, 0, endCol - startCol, processedImage.rows);
+        cv::Mat slice = processedImage(sliceRegion);
+        slices.push_back(slice);
+
+        std::string fname = "KEYS_CPP/I" + std::to_string(i + 1) + ".bmp";
+        cv::imwrite(fname, slice);
+    }
+
+    return slices;
+}
+
+
 std::vector<cv::Mat> sliceImageVertically(const cv::Mat& image, int n, bool usePadding = false) {
     cv::Mat processedImage;
     if (usePadding) {
@@ -304,32 +364,34 @@ void changeShadowEssentialValue(std::vector<Shadow>& shadows, bool isEssential) 
 */
 int calculateDeltaS(const cv::Mat& Se, int k, int t) {
     // Calculate total number of pixels in the image
-    std::cout << "deltaS calc k: "<< k << std::endl;
-    std::cout << "deltaS calc t: "<< t  << std::endl;
+    // std::cout << "deltaS calc k: "<< k << std::endl;
+    // std::cout << "deltaS calc t: "<< t  << std::endl;
 
     int totalPixels = Se.rows * Se.cols;
-    std::cout << "deltaS calc totalPixels: "<< totalPixels << std::endl;
+    // std::cout << "deltaS calc totalPixels: "<< totalPixels << std::endl;
     // Calculate delta S using the provided formula
     int deltaS = std::abs(totalPixels * k) / (2 * k - t);
-    std::cout << "deltaS calc deltaS: "<< deltaS << std::endl;
+    // std::cout << "deltaS calc deltaS: "<< deltaS << std::endl;
     return deltaS;
 }
 
 
 int calculateNonEssentialSize(const cv::Mat& Se, int k, int t) {
     // Calculate total number of pixels in the image
-    std::cout << "deltaS calc k: "<< k << std::endl;
-    std::cout << "deltaS calc t: "<< t  << std::endl;
+    // std::cout << "deltaS calc k: "<< k << std::endl;
+    // std::cout << "deltaS calc t: "<< t  << std::endl;
 
     int totalPixels = Se.rows * Se.cols;
-    std::cout << "deltaS calc totalPixels: "<< totalPixels << std::endl;
+    // std::cout << "deltaS calc totalPixels: "<< totalPixels << std::endl;
     // Calculate delta S using the provided formula
     int deltaS = (totalPixels * (k - t)) / (2 * k - t);
-    std::cout << "deltaS calc deltaS: "<< deltaS << std::endl;
+    // std::cout << "deltaS calc deltaS: "<< deltaS << std::endl;
     return deltaS;
 }
 
-
+/**
+ * Functions that are commented out below are function that would work in perfect world (see globalTempShadowSize)
+*/
 // cv::Mat extractTempShadowFromEssential(const cv::Mat& inputImage, int deltaS) {
 //     int rows = inputImage.rows;
 //     int targetCols = deltaS / rows;
@@ -346,7 +408,7 @@ int calculateNonEssentialSize(const cv::Mat& Se, int k, int t) {
 cv::Mat extractTempShadowFromEssential(const cv::Mat& inputImage, int deltaS) {
     int rows = inputImage.rows;
 
-    std::cout << "targetCols value: " << deltaS << std::endl;
+    // std::cout << "targetCols value: " << deltaS << std::endl;
 
     cv::Rect roi(0, 0, deltaS, rows);
     cv::Mat croppedImage = inputImage(roi).clone();
@@ -374,11 +436,11 @@ cv::Mat extractAllSubTempShadowFromEssential(const cv::Mat& inputImage, int delt
     int rows = inputImage.rows;
     int remainingCols = inputImage.cols - deltaS;
 
-    std::cout << "remainingCols value: " << remainingCols << std::endl;
+    // std::cout << "remainingCols value: " << remainingCols << std::endl;
 
     cv::Rect roi(deltaS, 0, remainingCols, rows);
     cv::Mat croppedImage = inputImage(roi).clone();
-    std::cout << "croppedImage size: " << croppedImage.cols << "x" << croppedImage.rows << std::endl;
+    // std::cout << "croppedImage size: " << croppedImage.cols << "x" << croppedImage.rows << std::endl;
 
     return croppedImage;
 }
@@ -406,20 +468,20 @@ cv::Mat extractAllSubTempShadowFromEssentialRight(const cv::Mat& inputImage, int
     int rows = inputImage.rows;
     int remainingCols = inputImage.cols - deltaS;
 
-    std::cout << "remainingCols value: " << remainingCols << std::endl;
+    // std::cout << "remainingCols value: " << remainingCols << std::endl;
 
     // Calculate the starting column for the ROI from the right edge
     int startCol = inputImage.cols - remainingCols;
 
     cv::Rect roi(startCol, 0, remainingCols, rows);
     cv::Mat croppedImage = inputImage(roi).clone();
-    std::cout << "croppedImage size: " << croppedImage.cols << "x" << croppedImage.rows << std::endl;
+    // std::cout << "croppedImage size: " << croppedImage.cols << "x" << croppedImage.rows << std::endl;
 
     return croppedImage;
 }
 
 
-std::vector<Shadow> getSubTempShadows (const std::vector<Shadow>& shadows, int essentialThreshold, int essentialNumber, int shadowsThreshold) {
+std::vector<Shadow> getSubTempShadows (const std::vector<Shadow>& shadows, int essentialThreshold, int essentialNumber, int shadowsThreshold, int shadowsAmount) {
     int sktAmount = essentialNumber + shadowsThreshold - essentialThreshold;
     int sktWangLingAmount = 2*sktAmount - shadowsThreshold;
     std::vector<Shadow> result;
@@ -433,44 +495,70 @@ std::vector<Shadow> getSubTempShadows (const std::vector<Shadow>& shadows, int e
             // int deltaS = calculateDeltaS(shadow.image, shadowsThreshold, essentialThreshold);
             // std::cout << "deltaS: " << deltaS << std::endl;
 
-            // std::cout << "shadowImage size: " << shadow.image.cols << "x" << shadow.image.rows << std::endl;
+            std::cout << "shadowImage size: " << shadow.image.cols << "x" << shadow.image.rows << std::endl;
 
             cv::Mat extractedTempShadow = extractTempShadowFromEssential(shadow.image, globalTempShadowSize);
             extractedAllTempShadow.push_back({extractedTempShadow, false, "", shadow.number, shadow.sliceNumber });
             cv::imshow("extracted Temp", extractedTempShadow);
-            // std::cout << "extractedTempShadow size: " << extractedTempShadow.cols << "x" << extractedTempShadow.rows << std::endl;
+            std::cout << "extractedTempShadow size: " << extractedTempShadow.cols << "x" << extractedTempShadow.rows << std::endl;
 
 
             cv::Mat extractedSubTempShadow = extractAllSubTempShadowFromEssentialRight(shadow.image, globalTempShadowSize);
             std::vector<cv::Mat> slicedSubTempShadows = sliceImageVertically(extractedSubTempShadow, (shadowsThreshold  - essentialThreshold));
             for(int i = 0; i < slicedSubTempShadows.size(); i++){
-                extractedAllSubTempShadow.push_back({slicedSubTempShadows[i], false, "", shadow.number, (shadowsThreshold  - essentialThreshold + 1 + i) });
+                extractedAllSubTempShadow.push_back({slicedSubTempShadows[i], false, "", shadow.number, (shadowsThreshold  - essentialThreshold + 1 + i)});
             }
-            // cv::imshow("extracted SubTemp", extractedSubTempShadow);
-            // std::cout << "extractedSubTempShadow size: " << extractedSubTempShadow.cols << "x" << extractedSubTempShadow.rows << std::endl;
-
-
-
-
-
+            cv::imshow("extracted SubTemp", extractedSubTempShadow);
+            std::cout << "extractedSubTempShadow size: " << extractedSubTempShadow.cols << "x" << extractedSubTempShadow.rows << std::endl;
+        }
+        else{
+            std::vector<cv::Mat> slicedSubTempShadows = sliceImageVertically(shadow.image, (shadowsThreshold  - essentialThreshold));
+            for(int i = 0; i < slicedSubTempShadows.size(); i++){
+                extractedAllSubTempShadow.push_back({slicedSubTempShadows[i], false, "", shadow.number, (shadowsThreshold  - essentialThreshold + 1 + i)});
+            }
         }
     }
-    int k = 1;
-    // std::cout << "slcies size= "<< slices.size()  << std::endl;
-    for(const auto& shadow : extractedAllSubTempShadow){
-        std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
-        std::string windowName = cv::format("slice %d", k);
-        cv::imshow(windowName, shadow.image);
-        k++;
+    // int k = 1;
+    // // std::cout << "slcies size= "<< slices.size()  << std::endl;
+    // for(const auto& shadow : extractedAllSubTempShadow){
+    //     std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
+    //     std::string windowName = cv::format("SUBTEMP %d", k);
+    //     cv::imshow(windowName, shadow.image);
+    //     k++;
+    // }
+
+    // int m = 1;
+    // // std::cout << "slcies size= "<< slices.size()  << std::endl;
+    // for(const auto& shadow : extractedAllTempShadow){
+    //     std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
+    //     std::string windowName = cv::format("TEMP %d", m);
+    //     cv::imshow(windowName, shadow.image);
+    //     m++;
+    // }
+    std::vector<Shadow> copiedPartitions;
+    std::vector<cv::Mat> decodedPartitions;
+    for (int i = (shadowsThreshold - essentialThreshold +1); i < (essentialNumber + shadowsThreshold - essentialThreshold +1); i++){
+        copiedPartitions.clear();
+        copiedPartitions = copyShadowsWithSliceNumber(extractedAllSubTempShadow, i);
+        std::cout << "copiedPartitions size: " << copiedPartitions[0].image.size() << std::endl;
+
+        cv::Mat reconstructedPartition = decodeShadowsTL(copiedPartitions, shadowsThreshold);
+        decodedPartitions.push_back(reconstructedPartition);
+
+        std::cout << "reconstructedPartition size: " << reconstructedPartition.cols << "x" << reconstructedPartition.rows << std::endl;
+        std::string windowName = cv::format("reconstructedPartition %d", i);
+        cv::imshow(windowName, reconstructedPartition);
     }
 
-    int m = 1;
+
+    int n = 1;
     // std::cout << "slcies size= "<< slices.size()  << std::endl;
     for(const auto& shadow : extractedAllTempShadow){
         std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
-        std::string windowName = cv::format("slice %d", m);
+        std::string windowName = cv::format("TEMP %d", n);
         cv::imshow(windowName, shadow.image);
-        m++;
+        n++;
     }
+
     return result;
 }
