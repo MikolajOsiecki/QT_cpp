@@ -100,7 +100,7 @@ int lcm(int a, int b) {
 }
 
 
-cv::Mat extremePadAndCrop(const cv::Mat &image, int X, int sktWangLingAmount, int shadowsThreshold, bool usePadding) {
+cv::Mat smartPadAndCrop(const cv::Mat &image, int X, int sktWangLingAmount, int shadowsThreshold, bool usePadding) {
     int rows = image.rows;
     int cols = image.cols;
 
@@ -124,15 +124,27 @@ cv::Mat extremePadAndCrop(const cv::Mat &image, int X, int sktWangLingAmount, in
     finalCols = (finalCols % X == 0) ? finalCols : finalCols + (X - (finalCols % X));
     std::cout << "finalCols size: " << finalCols << std::endl;
 
-    // Always pad the image to the calculated finalCols
-    cv::Mat paddedImage;
-    cv::copyMakeBorder(image, paddedImage, 0, 0, 0, finalCols - cols, cv::BORDER_CONSTANT, cv::Scalar(0));
+    cv::Mat resultImage;
 
-    return paddedImage;
+    if (usePadding) {
+        // Always pad the image to the calculated finalCols
+        cv::copyMakeBorder(image, resultImage, 0, 0, 0, finalCols - cols, cv::BORDER_CONSTANT, cv::Scalar(0));
+    } else {
+        // Crop the image to the calculated finalCols
+        if (finalCols > cols) {
+            // Pad if the calculated width is greater than the current width
+            cv::copyMakeBorder(image, resultImage, 0, 0, 0, finalCols - cols, cv::BORDER_CONSTANT, cv::Scalar(0));
+        } else {
+            // Crop if the calculated width is less than or equal to the current width
+            resultImage = image(cv::Rect(0, 0, finalCols, rows)).clone();
+        }
+    }
+
+    return resultImage;
 }
 
 std::vector<cv::Mat> sliceExtremeImageVertically(const cv::Mat& image, int n, int sktWangLingAmount, int shadowsThreshold, bool usePadding = false) {
-    cv::Mat processedImage = extremePadAndCrop(image, n, sktWangLingAmount, shadowsThreshold, usePadding);
+    cv::Mat processedImage = smartPadAndCrop(image, n, sktWangLingAmount, shadowsThreshold, usePadding);
     std::cout << "processedImage size: " << processedImage.size() << std::endl;
 
     std::vector<cv::Mat> slices;

@@ -41,6 +41,8 @@ HelpDialog::HelpDialog(QWidget *parent)
         "<br>"
         "<b>4.</b> Cropping/Padding of input image (Ticked off = crop, on = pad). Since algorithms for scalable secret image sharing  were designed for shadow of equal size,"
         "images have to cropped/padded to achieve equal sizes. Since this programs slices input image vertically, cropping and padding will impact right side edge of image."
+        "In Liu-Yang scheme this functionality differs slightly - when in Cropping mode (ticked off), width of image will be modified to closest value that satisfies mutiple "
+        "divisibility conditions, this can be both padded or cropped image. In Padding mode (ticked on) image will always be padded. Most of the time this results in padded image."
         "<br>"
         "<b>5.</b> Buttons for generating shadows and decoding. Generating shadows will instantly clear both the generated and selected shadows lists."
         " Decoding is possible only when atleast one shadow has been selected."
