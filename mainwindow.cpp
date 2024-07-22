@@ -6,7 +6,7 @@
 #include <QMessageBox>
 
 extern int globalTempShadowSize; // in a perfect world, a variable like me would not exist
-
+// std::vector<Shadow> globaltemporaryShadows;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -123,6 +123,7 @@ void MainWindow::on_btnSelectShadows_clicked()
 
 void MainWindow::on_btnGenerateShadows_clicked()
 {
+    cv::destroyAllWindows();
     QString ShadowsNumber = ui->txtNumberOfShadows->text();
     bool ok = false;
     shadowsAmount = ShadowsNumber.toInt(&ok);
@@ -154,13 +155,13 @@ void MainWindow::on_btnGenerateShadows_clicked()
             if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
                 generatedShadows = generateShadowsTL(loadedImage, shadowsThreshold, shadowsAmount);
                 convertShadowsToStr(generatedShadows);
-                changeShadowEssentialValue(generatedShadows, true);
+                changeShadowEssentialValue(generatedShadows, false);
                 // Add each shadow string to the QListWidget
                 for (const auto& shadow : generatedShadows) {
                     QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
 
                     if (shadow.isEssential) {
-                        newItem->setBackground(Qt::red);  // Set background color to red
+                        newItem->setBackground(Qt::green);
                     }
 
                     ui->listGeneratedSh->addItem(newItem);
@@ -190,14 +191,14 @@ void MainWindow::on_btnGenerateShadows_clicked()
                 // Merge composed shadows into the main shadow list
                 generatedShadows.insert(generatedShadows.end(), composedShadows.begin(), composedShadows.end());
                 convertShadowsToStr(generatedShadows);
-                changeShadowEssentialValue(generatedShadows, true);
+                changeShadowEssentialValue(generatedShadows, false);
 
                 // Add each shadow string to the QListWidget
                 for (const auto& shadow : generatedShadows) {
                     QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
 
                     if (shadow.isEssential) {
-                        newItem->setBackground(Qt::red);  // Set background color to red
+                        newItem->setBackground(Qt::green);
                     }
 
                     ui->listGeneratedSh->addItem(newItem);
@@ -255,13 +256,16 @@ void MainWindow::on_btnGenerateShadows_clicked()
                 //     k+=1;
                 // }
                 // std::cout << "COMPOSING SHADOWS: " << sktAmount << std::endl;
-                int m =1 ;
+                // int m =1 ;
                 std::vector<Shadow> temporaryShadows = composeShadows(allTempShadows, sktAmount, shadowsThreshold);
+                // globaltemporaryShadows = temporaryShadows;
                 globalTempShadowSize = temporaryShadows[0].image.cols;      // take whatever col number, can be first
                 for (const auto& shadow : temporaryShadows) {
-                    std::string windowName = cv::format("temporaryShadows org %d", m);
-                    cv::imshow(windowName, shadow.image);
-                    m++;
+                    // std::string windowName = cv::format("temporaryShadows org %d", m);
+                    // cv::imshow(windowName, shadow.image);
+                    // m++;
+                    std::string fname = "KEYS_CPP/CONSTR_" + std::to_string(shadow.number) + "_SL_" + std::to_string(shadow.sliceNumber) + ".bmp";
+                    cv::imwrite(fname, shadow.image);
                 }
                 // std::cout << "composedShadows size: " << composedShadows.size() << std::endl;
 
@@ -272,12 +276,12 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     std::vector<Shadow> subShadows = generateShadowsTL(temporaryShadows[i-1].image, shadowsThreshold, shadowsAmount, i);
                     allSubShadows.insert(allSubShadows.end(), subShadows.begin(), subShadows.end());
 
-                    for (const auto& shadow : subShadows) {
+                    // for (const auto& shadow : subShadows) {
                         // std::cout << "subShadows size: " << shadow.image.size() << std::endl;
                         // std::cout << "subShadow number: " << shadow.number << " subShadow sliceNumber: " << shadow.sliceNumber << std::endl;
                         // cv::imshow("subshadow", shadow.image);
                         // cv::waitKey();
-                    }
+                    // }
                     // std::cout << "===================== " << std::endl;
 
                 }
@@ -293,9 +297,9 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     std::vector<Shadow> selectedShadowNumber = copyShadowsWithNumber(allSubShadows, i+1);
 
                     for (const auto& shadow : selectedShadowNumber) {
-                        // std::cout << "selectedShadowNumber number: " << shadow.number << " selectedShadowNumber sliceNumber: " << shadow.sliceNumber << std::endl;
+                        std::cout << "selectedShadowNumber number: " << shadow.number << " selectedShadowNumber sliceNumber: " << shadow.sliceNumber << std::endl;
                         essentialShadowComponents.push_back(shadow.image);
-                        std::cout << "essentialShadowComponents size: " << shadow.image.size() << std::endl;
+                        // std::cout << "essentialShadowComponents size: " << shadow.image.size() << std::endl;
 
                     }
 
@@ -314,7 +318,7 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     std::vector<Shadow> selectedShadowNumber = copyShadowsWithNumber(allSubShadows, i+1);
 
                     for (const auto& shadow : selectedShadowNumber) {
-                        // std::cout << "selectedShadowNumber nromal number: " << shadow.number << " selectedShadowNumber nromal sliceNumber: " << shadow.sliceNumber << std::endl;
+                        std::cout << "selectedShadowNumber nromal number: " << shadow.number << " selectedShadowNumber nromal sliceNumber: " << shadow.sliceNumber << std::endl;
                         normalShadowComponents.push_back(shadow.image);
                         std::cout << "normalShadowComponents size: " << shadow.image.size() << std::endl;
                     }
