@@ -27,7 +27,7 @@ std::vector<Shadow> decomposeShadows(const std::vector<Shadow>& composedShadows,
 std::vector<Shadow> copyShadowsWithNumber(const std::vector<Shadow>& shadows, int specifiedNumber);
 std::vector<Shadow> copyShadowsWithSliceNumber(const std::vector<Shadow>& shadows, int specifiedNumber);
 std::vector<Shadow> copyEssentialShadows (const std::vector<Shadow>& shadows, bool returnEssential);
-std::vector<Shadow> getSubTempShadows (const std::vector<Shadow>& shadows, int essentialThreshold, int essentialNumber, int shadowsThreshold, int shadowsAmount);
+cv::Mat decodeLiuYang (const std::vector<Shadow>& shadows, int essentialThreshold, int essentialNumber, int shadowsThreshold, int shadowsAmount);
 
 class ImageViewer : public QWidget
 {

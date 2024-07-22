@@ -548,7 +548,7 @@ cv::Mat extractAllSubTempShadowFromEssentialRight(const cv::Mat& inputImage, int
 }
 
 
-std::vector<Shadow> getSubTempShadows (const std::vector<Shadow>& shadows, int essentialThreshold, int essentialNumber, int shadowsThreshold, int shadowsAmount) {
+cv::Mat decodeLiuYang (const std::vector<Shadow>& shadows, int essentialThreshold, int essentialNumber, int shadowsThreshold, int shadowsAmount) {
     int sktAmount = essentialNumber + shadowsThreshold - essentialThreshold;
     int sktWangLingAmount = 2*sktAmount - shadowsThreshold;
     std::vector<Shadow> result;
@@ -748,5 +748,5 @@ std::vector<Shadow> getSubTempShadows (const std::vector<Shadow>& shadows, int e
     cv::Mat reconstructed = mergeSubImages(decodedPartitions);
     cv::imshow("reconstructed",reconstructed);
 
-    return result;
+    return reconstructed;
 }

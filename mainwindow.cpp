@@ -445,9 +445,11 @@ void MainWindow::on_btnDecode_clicked() {
                 && essentialNumber > 0  && essentialThreshold >= 1 && essentialNumber >= essentialThreshold
                 && essentialNumber <= shadowsAmount) {
 
-                std::vector<Shadow> essentialShadows = copyEssentialShadows(selectedShadows, true);
-                std::vector<Shadow> nonessentialShadows = copyEssentialShadows(selectedShadows, false);
-                std::vector<Shadow> essentialPartitions = getSubTempShadows(selectedShadows, essentialThreshold, essentialNumber, shadowsThreshold, shadowsAmount);
+                // std::vector<Shadow> essentialShadows = copyEssentialShadows(selectedShadows, true);
+                // std::vector<Shadow> nonessentialShadows = copyEssentialShadows(selectedShadows, false);
+                cv::Mat decoded = decodeLiuYang(selectedShadows, essentialThreshold, essentialNumber, shadowsThreshold, shadowsAmount);
+                QImage img((uchar*)decoded.data, decoded.cols, decoded.rows, decoded.step, QImage::Format_Grayscale8);
+                ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
             }
 
 
