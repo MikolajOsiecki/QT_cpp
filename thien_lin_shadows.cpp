@@ -5,129 +5,294 @@
 
 std::vector<std::vector<std::vector<uint8_t>>> initializeB(const cv::Mat& A, int H, int W, int K);
 std::vector<std::vector<std::vector<uint8_t>>> initializeC(const std::vector<std::vector<std::vector<uint8_t>>>& B, int H, int W, int K, int N);
-void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows);
-void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows, int sliceNumber);
+// void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows);
+// void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows, int sliceNumber);
+void saveImages(const std::vector<Shadow>& shadows, const std::string& outputDir);
 
+
+
+// Polynomial class for evaluating polynomials at given points
+class Polynomial {
+public:
+    Polynomial(const std::vector<int>& coeffs) : coefficients(coeffs) {}
+
+    int operator()(int x) const {
+        int result = 0;
+        int power = 1;
+        for (int coeff : coefficients) {
+            result = (result + coeff * power) % 251;
+            power = (power * x) % 251;
+        }
+        return result;
+    }
+
+private:
+    std::vector<int> coefficients;
+};
+
+// Function to process the image and generate shadows
 std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N) {
-
-    int H = inputImage.rows;
-    int W = inputImage.cols / K;
-
-    auto B = initializeB(inputImage, H, W, K);
-    auto C = initializeC(B, H, W, K, N);
-
-    std::vector<Shadow> shadows;
-    saveImages(C, H, W, N, shadows);
-
-    return shadows;
-}
-
-
-std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N, int sliceNumber) {
-    // std::cout << "generateShadowsTL input Size: " << inputImage.size() << std::endl;
-
-    int H = inputImage.rows;
-    int W = inputImage.cols / K;
-
-    auto B = initializeB(inputImage, H, W, K);
-    auto C = initializeC(B, H, W, K, N);
-
-    std::vector<Shadow> shadows;
-    saveImages(C, H, W, N, shadows, sliceNumber);
-    // for (const auto& shadow : shadows) {
-        // std::cout << "generateShadowsTL shadow Size: " << shadow.image.size() << std::endl;
-    // }
-    return shadows;
-}
-
-
-std::vector<std::vector<std::vector<uint8_t>>> initializeB(const cv::Mat& A, int H, int W, int K) {
-    std::vector<std::vector<std::vector<uint8_t>>> B(H, std::vector<std::vector<uint8_t>>(W, std::vector<uint8_t>(K, 0)));
-    for (int P = 0; P < H; ++P) {
-        for (int Q = 0; Q < W; ++Q) {
-            for (int R = 0; R < K; ++R) {
-                B[P][Q][R] = A.at<uint8_t>(P, Q + (W * R));
-            }
-        }
+    // Ensure the input image is grayscale
+    cv::Mat A = inputImage.clone();
+    if (A.channels() > 1) {
+        cv::cvtColor(A, A, cv::COLOR_BGR2GRAY);
     }
-    return B;
-}
+    cv::min(A, 250, A);
+    int H = A.rows;
+    int W = A.cols / K;
 
-
-std::vector<std::vector<std::vector<uint8_t>>> initializeC(const std::vector<std::vector<std::vector<uint8_t>>>& B, int H, int W, int K, int N) {
-    std::vector<std::vector<std::vector<uint8_t>>> C(H, std::vector<std::vector<uint8_t>>(W, std::vector<uint8_t>(N, 0)));
+    // Initialize the B matrix
+    std::vector<Eigen::MatrixXi> B(H, Eigen::MatrixXi(W, K));
     for (int P = 0; P < H; ++P) {
         for (int Q = 0; Q < W; ++Q) {
-            std::vector<uint8_t> Y(K);
             for (int R = 0; R < K; ++R) {
-                Y[R] = B[P][Q][R];
-            }
-
-            for (int R = 0; R < N; ++R) {
-                int poly_val = 0;
-                for (int i = 0; i < K; ++i) {
-                    poly_val = poly_val * (R + 1) + Y[i];
+                int colIndex = Q + (W * R);
+                if (colIndex >= A.cols) {
+                    break;
                 }
-                C[P][Q][R] = poly_val % 251;
+                B[P](Q, R) = A.at<uchar>(P, colIndex);
             }
         }
     }
-    return C;
-}
 
-void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows) {
-    std::filesystem::create_directory("KEYS_CPP");
+    // Initialize the C matrix
+    std::vector<Eigen::MatrixXi> C(H, Eigen::MatrixXi(W, N));
+    for (int P = 0; P < H; ++P) {
+        for (int Q = 0; Q < W; ++Q) {
+            std::vector<int> Y(K);
+            for (int R = 0; R < K; ++R) {
+                Y[R] = B[P](Q, R);
+            }
+            std::reverse(Y.begin(), Y.end()); // Reversing Y for correct order
+            Polynomial poly(Y);
+            for (int R = 1; R <= N; ++R) {
+                C[P](Q, R - 1) = poly(R) % 251;
+            }
+        }
+    }
 
-    for (int R = 0; R < N; ++R) {
+    // Create shadows
+    std::vector<Shadow> shadows;
+    for (int R = 1; R <= N; ++R) {
         cv::Mat img(H, W, CV_8UC1);
         for (int P = 0; P < H; ++P) {
             for (int Q = 0; Q < W; ++Q) {
-                img.at<uint8_t>(P, Q) = C[P][Q][R];
+                img.at<uchar>(P, Q) = C[P](Q, R - 1);
             }
         }
-
-        std::string fname = "KEYS_CPP/K" + std::to_string(R + 1) + ".bmp";
-        if (!cv::imwrite(fname, img)) {
-            std::cerr << "Error saving image: " << fname << std::endl;
-        }
-
-        shadows.push_back({img, false, "", R + 1});
-
-        // Print the Shadow struct
-        // std::cout << "Shadow " << R + 1 << " added: "
-        //           << "isEssential=" << true
-        //           << ", text=\"" << "" << "\""
-        //           << ", number=" << R + 1
-        //           << std::endl;
+        Shadow shadow;
+        shadow.image = img;
+        shadow.isEssential = false;
+        shadow.text = "Generated";
+        shadow.number = R;
+        std::cout << "R: " << R << std::endl;
+        shadow.sliceNumber = -1;
+        shadows.push_back(shadow);
     }
+
+    saveImages(shadows, "KEYS_CPP");
+    return shadows;
 }
 
-void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows, int sliceNumber) {
-    std::filesystem::create_directory("KEYS_CPP");
-    for (int R = 0; R < N; ++R) {
+
+// Function to process the image and generate shadows
+std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N, int sliceNumber) {
+    // Ensure the input image is grayscale
+    cv::Mat A = inputImage.clone();
+    if (A.channels() > 1) {
+        cv::cvtColor(A, A, cv::COLOR_BGR2GRAY);
+    }
+    cv::min(A, 250, A);
+    int H = A.rows;
+    int W = A.cols / K;
+
+    // Initialize the B matrix
+    std::vector<Eigen::MatrixXi> B(H, Eigen::MatrixXi(W, K));
+    for (int P = 0; P < H; ++P) {
+        for (int Q = 0; Q < W; ++Q) {
+            for (int R = 0; R < K; ++R) {
+                int colIndex = Q + (W * R);
+                if (colIndex >= A.cols) {
+                    break;
+                }
+                B[P](Q, R) = A.at<uchar>(P, colIndex);
+            }
+        }
+    }
+
+    // Initialize the C matrix
+    std::vector<Eigen::MatrixXi> C(H, Eigen::MatrixXi(W, N));
+    for (int P = 0; P < H; ++P) {
+        for (int Q = 0; Q < W; ++Q) {
+            std::vector<int> Y(K);
+            for (int R = 0; R < K; ++R) {
+                Y[R] = B[P](Q, R);
+            }
+            std::reverse(Y.begin(), Y.end()); // Reversing Y for correct order
+            Polynomial poly(Y);
+            for (int R = 1; R <= N; ++R) {
+                C[P](Q, R - 1) = poly(R) % 251;
+            }
+        }
+    }
+
+    // Create shadows
+    std::vector<Shadow> shadows;
+    for (int R = 1; R <= N; ++R) {
         cv::Mat img(H, W, CV_8UC1);
         for (int P = 0; P < H; ++P) {
             for (int Q = 0; Q < W; ++Q) {
-                img.at<uint8_t>(P, Q) = C[P][Q][R];
+                img.at<uchar>(P, Q) = C[P](Q, R - 1);
             }
         }
+        Shadow shadow;
+        shadow.image = img;
+        shadow.isEssential = false;
+        shadow.text = "Generated";
+        shadow.number = R;
+        std::cout << "R: " << R << std::endl;
+        shadow.sliceNumber = sliceNumber;
+        shadows.push_back(shadow);
+    }
 
-        std::string fname = "KEYS_CPP/K" + std::to_string(R + 1) + ".bmp";
-        if (!cv::imwrite(fname, img)) {
-            std::cerr << "Error saving image: " << fname << std::endl;
-        }
+    return shadows;
+}
 
-        shadows.push_back({img, false, "", R + 1, sliceNumber});
 
-        // Print the Shadow struct
-        // std::cout << "Shadow " << R + 1 << " added: "
-        //           << "isEssential=" << true
-        //           << ", text=\"" << "" << "\""
-        //           << ", number=" << R + 1
-        //           << ", sliceNumber=" << sliceNumber
-        //           << std::endl;
+// Function to save shadows to disk
+void saveImages(const std::vector<Shadow>& shadows, const std::string& outputDir) {
+    std::filesystem::create_directories(outputDir);
+    for (const auto& shadow : shadows) {
+        std::string fileName = outputDir + "/K" + std::to_string(shadow.number) + ".bmp";
+        cv::imwrite(fileName, shadow.image);
+        std::cout << shadow.text << " saved as " << fileName << std::endl;
     }
 }
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+// std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N) {
+
+//     int H = inputImage.rows;
+//     int W = inputImage.cols / K;
+
+//     auto B = initializeB(inputImage, H, W, K);
+//     auto C = initializeC(B, H, W, K, N);
+
+//     std::vector<Shadow> shadows;
+//     saveImages(C, H, W, N, shadows);
+
+//     return shadows;
+// }
+
+
+// std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N, int sliceNumber) {
+//     // std::cout << "generateShadowsTL input Size: " << inputImage.size() << std::endl;
+
+//     int H = inputImage.rows;
+//     int W = inputImage.cols / K;
+
+//     auto B = initializeB(inputImage, H, W, K);
+//     auto C = initializeC(B, H, W, K, N);
+
+//     std::vector<Shadow> shadows;
+//     saveImages(C, H, W, N, shadows, sliceNumber);
+//     // for (const auto& shadow : shadows) {
+//         // std::cout << "generateShadowsTL shadow Size: " << shadow.image.size() << std::endl;
+//     // }
+//     return shadows;
+// }
+
+
+// std::vector<std::vector<std::vector<uint8_t>>> initializeB(const cv::Mat& A, int H, int W, int K) {
+//     std::vector<std::vector<std::vector<uint8_t>>> B(H, std::vector<std::vector<uint8_t>>(W, std::vector<uint8_t>(K, 0)));
+//     for (int P = 0; P < H; ++P) {
+//         for (int Q = 0; Q < W; ++Q) {
+//             for (int R = 0; R < K; ++R) {
+//                 B[P][Q][R] = A.at<uint8_t>(P, Q + (W * R));
+//             }
+//         }
+//     }
+//     return B;
+// }
+
+
+// std::vector<std::vector<std::vector<uint8_t>>> initializeC(const std::vector<std::vector<std::vector<uint8_t>>>& B, int H, int W, int K, int N) {
+//     std::vector<std::vector<std::vector<uint8_t>>> C(H, std::vector<std::vector<uint8_t>>(W, std::vector<uint8_t>(N, 0)));
+//     for (int P = 0; P < H; ++P) {
+//         for (int Q = 0; Q < W; ++Q) {
+//             std::vector<uint8_t> Y(K);
+//             for (int R = 0; R < K; ++R) {
+//                 Y[R] = B[P][Q][R];
+//             }
+
+//             for (int R = 0; R < N; ++R) {
+//                 int poly_val = 0;
+//                 for (int i = 0; i < K; ++i) {
+//                     poly_val = poly_val * (R + 1) + Y[i];
+//                 }
+//                 C[P][Q][R] = poly_val % 251;
+//             }
+//         }
+//     }
+//     return C;
+// }
+
+// void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows) {
+//     std::filesystem::create_directory("KEYS_CPP");
+
+//     for (int R = 0; R < N; ++R) {
+//         cv::Mat img(H, W, CV_8UC1);
+//         for (int P = 0; P < H; ++P) {
+//             for (int Q = 0; Q < W; ++Q) {
+//                 img.at<uint8_t>(P, Q) = C[P][Q][R];
+//             }
+//         }
+
+//         std::string fname = "KEYS_CPP/K" + std::to_string(R + 1) + ".bmp";
+//         if (!cv::imwrite(fname, img)) {
+//             std::cerr << "Error saving image: " << fname << std::endl;
+//         }
+
+//         shadows.push_back({img, false, "", R + 1});
+
+//         // Print the Shadow struct
+//         // std::cout << "Shadow " << R + 1 << " added: "
+//         //           << "isEssential=" << true
+//         //           << ", text=\"" << "" << "\""
+//         //           << ", number=" << R + 1
+//         //           << std::endl;
+//     }
+// }
+
+// void saveImages(const std::vector<std::vector<std::vector<uint8_t>>>& C, int H, int W, int N, std::vector<Shadow>& shadows, int sliceNumber) {
+//     std::filesystem::create_directory("KEYS_CPP");
+//     for (int R = 0; R < N; ++R) {
+//         cv::Mat img(H, W, CV_8UC1);
+//         for (int P = 0; P < H; ++P) {
+//             for (int Q = 0; Q < W; ++Q) {
+//                 img.at<uint8_t>(P, Q) = C[P][Q][R];
+//             }
+//         }
+
+//         std::string fname = "KEYS_CPP/K" + std::to_string(R + 1) + ".bmp";
+//         if (!cv::imwrite(fname, img)) {
+//             std::cerr << "Error saving image: " << fname << std::endl;
+//         }
+
+//         shadows.push_back({img, false, "", R + 1, sliceNumber});
+
+//         // Print the Shadow struct
+//         // std::cout << "Shadow " << R + 1 << " added: "
+//         //           << "isEssential=" << true
+//         //           << ", text=\"" << "" << "\""
+//         //           << ", number=" << R + 1
+//         //           << ", sliceNumber=" << sliceNumber
+//         //           << std::endl;
+//     }
+// }
 
 ////////////////////////////////////////////////
 ////////////////////DECODE//////////////////////

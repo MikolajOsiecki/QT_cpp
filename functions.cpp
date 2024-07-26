@@ -746,7 +746,7 @@ cv::Mat decodeLiuYang (const std::vector<Shadow>& shadows, int essentialThreshol
     }
 
     cv::Mat reconstructed = mergeSubImages(decodedPartitions);
-    cv::imshow("reconstructed",reconstructed);
+    // cv::imshow("reconstructed",reconstructed);
 
     return reconstructed;
 }
