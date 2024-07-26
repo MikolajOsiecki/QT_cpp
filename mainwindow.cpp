@@ -3,7 +3,10 @@
 #include "functions.h"
 #include "thien_lin_shadows.h"
 #include <opencv2/highgui/highgui.hpp>
-#include <QMessageBox>  // Ensure to include QMessageBox
+#include <QMessageBox>
+
+extern int globalTempShadowSize; // in a perfect world, a variable like me would not exist
+// std::vector<Shadow> globaltemporaryShadows;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -30,9 +33,9 @@ MainWindow::~MainWindow()
 }
 
 
-
 void MainWindow::on_btnClear_clicked()
 {
+
     // Get the total number of items in listSelectedSh
     int itemCount = ui->listSelectedSh->count();
 
@@ -120,12 +123,20 @@ void MainWindow::on_btnSelectShadows_clicked()
 
 void MainWindow::on_btnGenerateShadows_clicked()
 {
+    cv::destroyAllWindows();
     QString ShadowsNumber = ui->txtNumberOfShadows->text();
     bool ok = false;
     shadowsAmount = ShadowsNumber.toInt(&ok);
     QString ShadowsThreshold = ui->txtShadowThreshold->text();
     bool ok2 = false;
     shadowsThreshold = ShadowsThreshold.toInt(&ok2);
+    QString EssentialNumber = ui->txtNumberOfEssential->text();
+    bool ok3 = false;
+    essentialNumber = EssentialNumber.toInt(&ok3);
+    QString EssentialThreshold = ui->txtEssentialThreshold->text();
+    bool ok4 = false;
+    essentialThreshold = EssentialThreshold.toInt(&ok4);
+    bool usePadding = ui->checkBoxCropPadImage->isChecked();
 
     if (loadedImage.empty()) {
         QMessageBox::warning(this, "Error", "No image loaded or image is empty.");
@@ -144,12 +155,13 @@ void MainWindow::on_btnGenerateShadows_clicked()
             if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
                 generatedShadows = generateShadowsTL(loadedImage, shadowsThreshold, shadowsAmount);
                 convertShadowsToStr(generatedShadows);
+                changeShadowEssentialValue(generatedShadows, false);
                 // Add each shadow string to the QListWidget
                 for (const auto& shadow : generatedShadows) {
                     QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
 
                     if (shadow.isEssential) {
-                        newItem->setBackground(Qt::red);  // Set background color to red
+                        newItem->setBackground(Qt::green);
                     }
 
                     ui->listGeneratedSh->addItem(newItem);
@@ -162,13 +174,14 @@ void MainWindow::on_btnGenerateShadows_clicked()
         case 1:
             if (ok && ok2 && shadowsAmount > 0 && shadowsThreshold >= 2 && shadowsAmount >= shadowsThreshold) {
 
-                bool usePadding = ui->checkBoxCropPadImage->isChecked();
                 std::vector<cv::Mat> slices = sliceImageVertically(loadedImage, shadowsAmount, usePadding);
-
                 std::vector<Shadow> allSubShadows;
+                int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
+
                 for (int i = 0; i < slices.size(); ++i) {
-                    int WangLinAmount = 2 * shadowsAmount - shadowsThreshold;
                     std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], shadowsAmount, WangLinAmount, i + 1);
+                    // std::cout << "sliceShadowsAmount: " << sliceShadows.size() << std::endl;
+
                     allSubShadows.insert(allSubShadows.end(), sliceShadows.begin(), sliceShadows.end());
                 }
 
@@ -177,15 +190,15 @@ void MainWindow::on_btnGenerateShadows_clicked()
 
                 // Merge composed shadows into the main shadow list
                 generatedShadows.insert(generatedShadows.end(), composedShadows.begin(), composedShadows.end());
-
                 convertShadowsToStr(generatedShadows);
+                changeShadowEssentialValue(generatedShadows, false);
 
                 // Add each shadow string to the QListWidget
                 for (const auto& shadow : generatedShadows) {
                     QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
 
                     if (shadow.isEssential) {
-                        newItem->setBackground(Qt::red);  // Set background color to red
+                        newItem->setBackground(Qt::green);
                     }
 
                     ui->listGeneratedSh->addItem(newItem);
@@ -196,13 +209,148 @@ void MainWindow::on_btnGenerateShadows_clicked()
             }
             break;
 
-        // case 2:
-        //     break;
+        case 2:
+            // algorithm:
+            // 1. use WangLin (k, s+k-t) to generate s+k-t temporary shadows (W1.....Ws+k-t)
+            // 2. for each k-t temp shadow Wj (j=s+1,....,s+k-t) generate n subshadows wj,1 .....wj,n using ThienLin (k,n)
+            // 3. for i=1,....,s essenital shadows Si are Si = Wi || ws+1,i || .... || ws+k-t,i (subshadow i form each of the k-t subsets of temp shadows)
+            //    for i = s+1, .... n normal shadows Si are Si =ws+1,i || .... || ws+k-t,i (same as before but without main temp shadow)
+            if (ok && ok2 && ok3 && ok4
+                && shadowsAmount > 0 && shadowsThreshold >= 1 && shadowsAmount >= shadowsThreshold
+                && essentialNumber > 0  && essentialThreshold >= 1 && essentialNumber >= essentialThreshold
+                && essentialNumber <= shadowsAmount) {
 
-    default:
-        QMessageBox::warning(this, "Error", "Invalid selection in encoding type!");
-        break;
-    }
+
+                ///////////////// STEP 1 /////////////////////////
+                int sktAmount = essentialNumber + shadowsThreshold - essentialThreshold;
+                int sktWangLingAmount = 2*sktAmount - shadowsThreshold;
+                std::cout << "sktAmount: " << sktAmount << std::endl;
+                std::cout << "sktWangLingAmount: " << sktWangLingAmount << std::endl;
+
+                std::vector<cv::Mat> slices = sliceExtremeImageVertically(loadedImage, sktAmount, sktWangLingAmount, shadowsThreshold, usePadding);
+                std::cout << "slices Amount: " << slices.size() << std::endl;
+                std::vector<Shadow> allTempShadows;
+
+                for (int i = 0; i < slices.size(); ++i) {
+                    std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], sktAmount, sktWangLingAmount, i + 1);
+                    std::cout << "slice i size: " << slices[i].size() << std::endl;
+                    std::cout << "sliceShadows size: " << sliceShadows[0].image.size() << std::endl;
+
+                    std::cout << "sliceShadows Amount: " << sliceShadows.size() << std::endl;
+
+                    // int k = 1;
+                    // for (const auto& shadow : sliceShadows) {
+                    //     std::string windowName = cv::format("sliceShadow %d", k);
+                    //     cv::imshow(windowName, shadow.image);
+                    //     k+=1;
+                    // }
+                    allTempShadows.insert(allTempShadows.end(), sliceShadows.begin(), sliceShadows.end());
+                    cv::waitKey(0);
+                }
+
+                // std::cout << "allSubShadows size: " << allSubShadows.size() << std::endl;
+                // int k = 1;
+                // for (const auto& shadow : allSubShadows) {
+                //     std::string windowName = cv::format("Partition %d", k);
+                    // cv::imshow(windowName, shadow.image);
+                //     k+=1;
+                // }
+                // std::cout << "COMPOSING SHADOWS: " << sktAmount << std::endl;
+                // int m =1 ;
+                std::vector<Shadow> temporaryShadows = composeShadows(allTempShadows, sktAmount, shadowsThreshold);
+                // globaltemporaryShadows = temporaryShadows;
+                globalTempShadowSize = temporaryShadows[0].image.cols;      // take whatever col number, can be first
+                for (const auto& shadow : temporaryShadows) {
+                    // std::string windowName = cv::format("temporaryShadows org %d", m);
+                    // cv::imshow(windowName, shadow.image);
+                    // m++;
+                    std::string fname = "KEYS_CPP/CONSTR_" + std::to_string(shadow.number) + "_SL_" + std::to_string(shadow.sliceNumber) + ".bmp";
+                    cv::imwrite(fname, shadow.image);
+                }
+                // std::cout << "composedShadows size: " << composedShadows.size() << std::endl;
+
+                ///////////////// STEP 2 ////////////////////////
+                std::vector<Shadow> allSubShadows;
+                for(int i = essentialNumber + 1; i <=sktAmount; i++){
+                    // iterator i could be without +1 but this way it is same as in original article (there it is s+1)
+                    std::vector<Shadow> subShadows = generateShadowsTL(temporaryShadows[i-1].image, shadowsThreshold, shadowsAmount, i);
+                    allSubShadows.insert(allSubShadows.end(), subShadows.begin(), subShadows.end());
+
+                    // for (const auto& shadow : subShadows) {
+                        // std::cout << "subShadows size: " << shadow.image.size() << std::endl;
+                        // std::cout << "subShadow number: " << shadow.number << " subShadow sliceNumber: " << shadow.sliceNumber << std::endl;
+                        // cv::imshow("subshadow", shadow.image);
+                        // cv::waitKey();
+                    // }
+                    // std::cout << "===================== " << std::endl;
+
+                }
+
+                ///////////////// STEP 3 ////////////////////////
+                //Essential Shadows
+                // std::cout << "Essential Shadows " << std::endl;
+                for(int i = 0; i < essentialNumber; i++){
+                    std::vector<cv::Mat> essentialShadowComponents;
+                    essentialShadowComponents.push_back(temporaryShadows[i].image);
+                    std::cout << "temporaryShadows size: " << temporaryShadows[i].image.size() << std::endl;
+
+                    std::vector<Shadow> selectedShadowNumber = copyShadowsWithNumber(allSubShadows, i+1);
+
+                    for (const auto& shadow : selectedShadowNumber) {
+                        std::cout << "selectedShadowNumber number: " << shadow.number << " selectedShadowNumber sliceNumber: " << shadow.sliceNumber << std::endl;
+                        essentialShadowComponents.push_back(shadow.image);
+                        // std::cout << "essentialShadowComponents size: " << shadow.image.size() << std::endl;
+
+                    }
+
+                    // std::cout << "===================== " << std::endl;
+
+                    cv::Mat essentialShadow = mergeSubImages(essentialShadowComponents);
+                    std::cout << "essentialShadow size: " << essentialShadow.size() << std::endl;
+                    generatedShadows.push_back({essentialShadow, true, "", i+1, -1});
+                }
+
+                //Normal Shadows
+                // std::cout << "Normal Shadows " << std::endl;
+                for(int i = essentialNumber; i < shadowsAmount; i++){
+                    std::vector<cv::Mat> normalShadowComponents;
+
+                    std::vector<Shadow> selectedShadowNumber = copyShadowsWithNumber(allSubShadows, i+1);
+
+                    for (const auto& shadow : selectedShadowNumber) {
+                        std::cout << "selectedShadowNumber nromal number: " << shadow.number << " selectedShadowNumber nromal sliceNumber: " << shadow.sliceNumber << std::endl;
+                        normalShadowComponents.push_back(shadow.image);
+                        std::cout << "normalShadowComponents size: " << shadow.image.size() << std::endl;
+                    }
+
+                    cv::Mat normalShadow = mergeSubImages(normalShadowComponents);
+                    std::cout << "normalShadow size: " << normalShadow.size() << std::endl;
+                    generatedShadows.push_back({normalShadow, false, "", i+1, -1});
+                }
+
+                // generatedShadows.insert(generatedShadows.end(), allSubShadows.begin(), allSubShadows.end());
+                convertShadowsToStr(generatedShadows);
+
+                // Add each shadow string to the QListWidget
+                for (const auto& shadow : generatedShadows) {
+                    QListWidgetItem* newItem = new QListWidgetItem(QString::fromStdString(shadow.text), ui->listGeneratedSh);
+
+                    if (shadow.isEssential) {
+                        newItem->setBackground(Qt::green);  // Set background color to red
+                    }
+
+                    ui->listGeneratedSh->addItem(newItem);
+                }
+
+            } else {
+                QMessageBox::warning(this, "Error", "Invalid parameters!");
+            }
+            break;
+
+        default:
+            QMessageBox::warning(this, "Error", "Invalid selection in encoding type!");
+            break;
+        }
 
 }
 
@@ -212,12 +360,22 @@ void MainWindow::on_btnDecode_clicked() {
         QMessageBox::warning(this, "Error", "No shadows selected for decoding.");
         return;  // Stop execution of the function if no shadows are selected
     }
+
+    ui->picDecoded->setPixmap(loadingImg.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    QCoreApplication::processEvents(); // Process pending events, including the GUI update, this will make sure that loading img is displayed proprely
+
     QString ShadowsNumber = ui->txtNumberOfShadows->text();
     bool ok = false;
     shadowsAmount = ShadowsNumber.toInt(&ok);
     QString ShadowsThreshold = ui->txtShadowThreshold->text();
     bool ok2 = false;
     shadowsThreshold = ShadowsThreshold.toInt(&ok2);
+    QString EssentialNumber = ui->txtNumberOfEssential->text();
+    bool ok3 = false;
+    essentialNumber = EssentialNumber.toInt(&ok3);
+    QString EssentialThreshold = ui->txtEssentialThreshold->text();
+    bool ok4 = false;
+    essentialThreshold = EssentialThreshold.toInt(&ok4);
 
     int selectedIndex = ui->dropdownEncodingType->currentIndex(); // Get the selected index from the dropdown
     switch(selectedIndex){
@@ -238,7 +396,7 @@ void MainWindow::on_btnDecode_clicked() {
                 // int k =1;
                 for(int i = 0; i < shadowsAmount; i++){
                     copiedPartitions.clear();
-                    copiedPartitions = copyShadowsWithNumber(partitionedShadows, i+1);
+                    copiedPartitions = copyShadowsWithSliceNumber(partitionedShadows, i+1);
 
 
                     cv::Mat reconstructedPartition = decodeShadowsTL(copiedPartitions, shadowsAmount);
@@ -271,9 +429,34 @@ void MainWindow::on_btnDecode_clicked() {
                 //         std::cerr << "Error saving image: " << fname << std::endl;
                 //     }
                 // }
-                std::cout << "=============================" << std::endl;
+                // std::cout << "=============================" << std::endl;
             }
             break;
+
+
+        case 2:
+            // algorithm (decode), input m shadows with r essential shadows (m>=k, r>=t):
+            // 1. assume that essentail shadows r are S1,...Sr and normal m-r are Ss+1,...,Ss+m-r
+            // 2. reconstruc temp shadows Wj j=s+1,...s+k-t using ThienLin(m) from m inputs wj,1....wj,s+1,....wj,s+m-r
+            // 3. reconstruct r temp shadows W1,...Wr form r essential shadows S1,...Sr (notice Si = Wi || ws+1,i || .... || ws+k-t,i)
+            // 4. generate secret image I using WangLin(r+k-t) from r+k-t input temp shadows W1,....Wr,....Ws+1,...Ws+k-t
+            if (ok && ok2 && ok3 && ok4
+                && shadowsAmount > 0 && shadowsThreshold >= 1 && shadowsAmount >= shadowsThreshold
+                && essentialNumber > 0  && essentialThreshold >= 1 && essentialNumber >= essentialThreshold
+                && essentialNumber <= shadowsAmount) {
+
+                // std::vector<Shadow> essentialShadows = copyEssentialShadows(selectedShadows, true);
+                // std::vector<Shadow> nonessentialShadows = copyEssentialShadows(selectedShadows, false);
+                cv::Mat decoded = decodeLiuYang(selectedShadows, essentialThreshold, essentialNumber, shadowsThreshold, shadowsAmount);
+                QImage img((uchar*)decoded.data, decoded.cols, decoded.rows, decoded.step, QImage::Format_Grayscale8);
+                ui->picDecoded->setPixmap(QPixmap::fromImage(img.scaled(ui->picSelected->width(), ui->picSelected->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+            }
+
+
+                ///////////////// STEP 1 /////////////////////////
+
+            break;
+
 
         default:
             QMessageBox::warning(this, "Error", "Invalid selection in encoding type!");
@@ -346,7 +529,8 @@ void MainWindow::on_listSelectedSh_itemDoubleClicked(QListWidgetItem *item)
 
 void MainWindow::on_actionHelp_triggered()
 {
-    //TODO: Implement help dialog
+    helpDialog = new HelpDialog(this);
+    helpDialog->show();
 }
 
 
@@ -368,3 +552,43 @@ void MainWindow::on_actionAbout_Gui_triggered()
 {
     QApplication::aboutQt();
 }
+
+void MainWindow::on_actionAbout_Schemes_triggered()
+{
+    QMessageBox::information(this, "About Schemes",
+    "<b>Thien-Lin scheme</b>"
+    "<br>"
+    "<b>k</b> - threshold value"
+    "<br>"
+    "<b>n</b> - shadow amount value"
+    "<br>"
+    "<b>Lin-Wang scheme</b>"
+    "<br>"
+    "Input image is divided into <b>n</b> disjoint partitions of equal size of <i>I/n</i> where <i>I</i> is input image size (in this program partitions are vertical slices)."
+    "Next, each image partition is encoded into <i>2n-t</i> partition shadows using Thien-Lin <i>(n,2n-t)</i> scheme."
+    "Main shadows are created so that each of them holds <i>n-t+1</i> partition shadows of one image partition, and <i>n-1</i> partition shadows from other <i>n-1</i> partitions"
+    "<br>"
+    "In essence, this means the bigger the amount of shadows used in decoding, the bigger part of original image is decoded."
+    "<br>"
+    "<b>k</b> - threshold value"
+    "<br>"
+    "<b>n</b> - shadow amount value"
+    "<br>"
+    "<b>Liu-Yang scheme</b>"
+    "<br>"
+    "Input image is encoded into <i>s+k-t</i> temporary shadows using Lin-Wang scheme. Then, for each <i>k-t</i> temporary shadowm <i>n</i> amount of sub-temporary shadows are created."
+    "<i>s</i> amount of essential shadows contain one temporary shadow, and <i>s+k-t</i> sub-temporary shadows, while non-essential shadows contain only <i>s+k-t</i> sub-temporary shadows."
+    "<br>"
+    "When attempting to decode image using <i>x</i> amount of essential shadows that is <i>t &le; x &lt; s</i> and any amount of non-essential shadows so that total amount <i>z</i> is <i>z &ge; k</i>,"
+    "will result in partial decoding of image. When using amount of essential shadows that is <i>x = s</i> and total amount of shadows is <i>z &le; k</i>, will result in full reconstruction of image."
+    "<br>"
+    "<b>t</b> - essential shadows hreshold value"
+    "<br>"
+    "<b>s</b> - essential shadows amount value"
+    "<br>"
+    "<b>k</b> - total threshold value"
+    "<br>"
+    "<b>n</b> - total shadow amount value"
+    );
+}
+

@@ -4,6 +4,7 @@
 #include "mainwindow.h"
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include "Eigen/Dense"
 
 std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N);
 std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N, int sliceNumber);

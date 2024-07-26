@@ -15,6 +15,10 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 # Find OpenCV components
 find_package(OpenCV REQUIRED)
 
+# Include Eigen directory
+set(EIGEN3_INCLUDE_DIR "/home/nosfreat/eigen-3.4.0")
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 # Include the OpenCV directories
 include_directories(${OpenCV_INCLUDE_DIRS})
 set(PROJECT_SOURCES
@@ -32,6 +36,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         functions.h
         thien_lin_shadows.cpp
         thien_lin_shadows.h
+        img_sources.qrc
+        helpdialog.h helpdialog.cpp helpdialog.ui
+
+
+
 
     )
 # Define target properties for Android with Qt 6 as:

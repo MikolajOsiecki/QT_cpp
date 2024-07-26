@@ -8,6 +8,8 @@
 #include <QPixmap>
 #include <opencv2/core/mat.hpp> // Make sure to include the necessary header for cv::Mat
 #include <QListWidgetItem>
+#include "helpdialog.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -53,9 +55,17 @@ private slots:
 
     void on_actionAuthor_triggered();
 
+    void on_actionAbout_Schemes_triggered();
+
 private:
+    QPixmap loadingImg = QPixmap(":/images/loading.jpg");
+
     Ui::MainWindow *ui;
+    HelpDialog *helpDialog;                             // Doing it this way (pointer then creating new instance) allows for using main window and help window at the same time
+                                                        // if it was created simply by HelpDialog helpDialog and then exec(), only main window would not be enabled when help is open
+
     cv::Mat loadedImage;
+
     std::vector<Shadow> generatedShadows;               // Hold the generated shadow images and their importance
     std::vector<Shadow> selectedShadows;                // Hold the selected shadow images and their importance
     std::vector<Shadow> partitionedShadows;             // Hold the partitioned shadow images (Wang-Lin)
@@ -63,7 +73,10 @@ private:
     std::vector<cv::Mat> decodedPartitions;             // Hold the decoded partitions (Wang-Ling)
     std::vector<std::string> generatedShadowsStrings;   // Hold the generated shadow images as strings
     std::vector<std::string> selectedShadowsStrings;    // Hold the selected shadow images as strings
+
     int shadowsThreshold;
     int shadowsAmount;
+    int essentialThreshold;
+    int essentialNumber;
 };
 #endif // MAINWINDOW_H
