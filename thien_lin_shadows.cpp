@@ -85,12 +85,12 @@ std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N) {
         shadow.isEssential = false;
         shadow.text = "Generated";
         shadow.number = R;
-        std::cout << "R: " << R << std::endl;
+        // std::cout << "R: " << R << std::endl;
         shadow.sliceNumber = -1;
         shadows.push_back(shadow);
     }
 
-    saveImages(shadows, "KEYS_CPP");
+    // saveImages(shadows, "KEYS_CPP");
     return shadows;
 }
 
@@ -150,7 +150,7 @@ std::vector<Shadow> generateShadowsTL(const cv::Mat& inputImage, int K, int N, i
         shadow.isEssential = false;
         shadow.text = "Generated";
         shadow.number = R;
-        std::cout << "R: " << R << std::endl;
+        // std::cout << "R: " << R << std::endl;
         shadow.sliceNumber = sliceNumber;
         shadows.push_back(shadow);
     }
@@ -298,15 +298,15 @@ void saveImages(const std::vector<Shadow>& shadows, const std::string& outputDir
 ////////////////////DECODE//////////////////////
 ////////////////////////////////////////////////
 
-std::vector<double> lj_num(const std::vector<double>& x, int j, int m) {
+std::vector<double> lj_num(const std::vector<double>& x, long long j, long long m) {
     std::vector<double> f = {1.0};
-    for (int p = 1; p <= m; ++p) {
+    for (long long p = 1; p <= m; ++p) {
         if (p == j) {
             continue;
         }
         std::vector<double> temp = {1.0, -x[p-1]};
         std::vector<double> result(f.size() + temp.size() - 1, 0.0);
-        
+
         for (size_t i = 0; i < f.size(); ++i) {
             for (size_t k = 0; k < temp.size(); ++k) {
                 result[i + k] += f[i] * temp[k];
@@ -317,9 +317,9 @@ std::vector<double> lj_num(const std::vector<double>& x, int j, int m) {
     return f;
 }
 
-double lj_den(const std::vector<double>& x, int j, int m) {
+double lj_den(const std::vector<double>& x, long long j, long long m) {
     double f = 1.0;
-    for (int p = 1; p <= m; ++p) {
+    for (long long p = 1; p <= m; ++p) {
         if (p == j) {
             continue;
         }
@@ -328,14 +328,14 @@ double lj_den(const std::vector<double>& x, int j, int m) {
     return f;
 }
 
-int invMod(int x, int y, int m) {
+long long invMod(long long x, long long y, long long m) {
     if (y == 0) {
         return 1;
     }
-    
-    int p = invMod(x, y / 2, m) % m;
+
+    long long p = invMod(x, y / 2, m) % m;
     p = (p * p) % m;
-    
+
     if (y % 2 == 0) {
         return p;
     } else {
@@ -343,149 +343,99 @@ int invMod(int x, int y, int m) {
     }
 }
 
-int modFrac(int a, int b, int m) {
+long long modFrac(long long a, long long b, long long m) {
     if (b < 0) {
         b = -b;
         a = -a;
     }
     b = invMod(b, m - 2, m);
-    int a_mod_m = (a % m + m) % m;
-    int retval = (a_mod_m * b % m) % m;
+    long long a_mod_m = (a % m + m) % m;
+    long long retval = (a_mod_m * b % m) % m;
     return retval;
 }
 
-std::vector<int> modLagPol(const std::vector<int>& y, const std::vector<double>& x, int v) {
-    int m = y.size();
+std::vector<long long> modLagPol(const std::vector<long long>& y, const std::vector<double>& x, long long v) {
+    long long m = y.size();
     std::vector<std::vector<double>> a(m);
     std::vector<double> b(m);
-    
-    for (int p = 1; p <= m; ++p) {
+
+    for (long long p = 1; p <= m; ++p) {
         a[p-1] = lj_num(x, p, m);
         b[p-1] = lj_den(x, p, m);
     }
-    
-    std::vector<int> num(m, 0);
+
+    std::vector<long long> num(m, 0);
     double den = *std::max_element(b.begin(), b.end());
-    
-    for (int p = 1; p <= m; ++p) {
+
+    for (long long p = 1; p <= m; ++p) {
         std::vector<double> t(a[p-1].size());
         std::transform(a[p-1].begin(), a[p-1].end(), t.begin(), [den, &b, p](double val) { return val * (den / b[p-1]); });
         if((den / b[p-1]) == 0 || den == 0 || b[p-1] == 0){
-            std::cout << "Division by 0!!!" << std::endl;
+            // std::cout << "Division by 0!!!" << std::endl;
         }
         for (size_t i = 0; i < t.size(); ++i) {
             num[i] += y[p-1] * t[i];
         }
     }
-    
-    std::vector<int> f(m);
-    for (int p = 1; p <= m; ++p) {
+
+    std::vector<long long> f(m);
+    for (long long p = 1; p <= m; ++p) {
         f[p-1] = modFrac(num[p-1], den, v);
     }
-    
+
     return f;
 }
 
 cv::Mat decodeShadowsTL(const std::vector<Shadow>& selectedShadows, int K) {
-    int R = selectedShadows.size();
+    long long R = selectedShadows.size();
     if (R < K) {
-        std::cout << "-- Insufficient Number of Keys" << std::endl;
+        // std::cout << "-- Insufficient Number of Keys" << std::endl;
         // return cv::Mat();
     }
 
-    std::vector<int> X(R);
-    for (int i = 0; i < R; ++i) {
+    std::vector<long long> X(R);
+    for (long long i = 0; i < R; ++i) {
         X[i] = selectedShadows[i].number;  // Use the number field from the Shadow struct
     }
 
     // Load the first image to get the dimensions
     cv::Mat firstImage = selectedShadows[0].image;
-    int H = firstImage.rows;
-    int W = firstImage.cols;
+    long long H = firstImage.rows;
+    long long W = firstImage.cols;
 
     // Create a 3D matrix to store all images
     std::vector<cv::Mat> A(R, cv::Mat(H, W, CV_8UC1));
 
     // Load all images into the 3D matrix
-    for (int P = 0; P < R; ++P) {
+    for (long long P = 0; P < R; ++P) {
         A[P] = selectedShadows[P].image;
     }
 
     // Process the images
     cv::Mat I = cv::Mat::zeros(H, W * K, CV_64FC1);
 
-    for (int M = 0; M < H; ++M) {
-        for (int N = 0; N < W; ++N) {
-            std::vector<int> Y(R);
-            for (int O = 0; O < R; ++O) {
+    for (long long M = 0; M < H; ++M) {
+        for (long long N = 0; N < W; ++N) {
+            std::vector<long long> Y(R);
+            for (long long O = 0; O < R; ++O) {
                 Y[O] = A[O].at<uchar>(M, N);
             }
 
-            std::vector<int> Z = modLagPol(Y, std::vector<double>(X.begin(), X.end()), 251);
-            Z = std::vector<int>(Z.begin() + (R - K), Z.end());
+            std::vector<long long> Z = modLagPol(Y, std::vector<double>(X.begin(), X.end()), 251);
+            Z = std::vector<long long>(Z.begin() + (R - K), Z.end());
 
-            for (int O = 0; O < K; ++O) {
+            for (long long O = 0; O < K; ++O) {
                 I.at<double>(M, N + (W * O)) = Z[O];
             }
         }
     }
 
     I.convertTo(I, CV_8UC1);
-    imwrite("Message_new.jpg", I);
+    // imwrite("Message_new.jpg", I);
 
-    std::cout << "-- Message Successfully Recovered" << std::endl;
+    // std::cout << "-- Message Successfully Recovered" << std::endl;
 
     return I;
 }
 
-// cv::Mat decodeShadowsTLdebug(const std::vector<Shadow>& selectedShadows, int K) {
-//     int R = selectedShadows.size();
-//     if (R < K) {
-//         std::cout << "-- Insufficient Number of Keys" << std::endl;
-//         // return cv::Mat();
-//     }
 
-//     std::vector<int> X(R);
-//     for (int i = 0; i < R; ++i) {
-//         X[i] = selectedShadows[i].number;  // Use the number field from the Shadow struct
-//     }
-
-//     // Load the first image to get the dimensions
-//     cv::Mat firstImage = selectedShadows[0].image;
-//     int H = firstImage.rows;
-//     int W = firstImage.cols;
-
-//     // Create a 3D matrix to store all images
-//     std::vector<cv::Mat> A(R, cv::Mat(H, W, CV_8UC1));
-
-//     // Load all images into the 3D matrix
-//     for (int P = 0; P < R; ++P) {
-//         A[P] = selectedShadows[P].image;
-//     }
-
-//     // Process the images
-//     cv::Mat I = cv::Mat::zeros(H, W * K, CV_64FC1);
-
-//     for (int M = 0; M < H; ++M) {
-//         for (int N = 0; N < W; ++N) {
-//             std::vector<int> Y(R);
-//             for (int O = 0; O < R; ++O) {
-//                 Y[O] = A[O].at<uchar>(M, N);
-//             }
-
-//             std::vector<int> Z = modLagPol(Y, std::vector<double>(X.begin(), X.end()), 251);
-//             Z = std::vector<int>(Z.begin() + (R - K), Z.end());
-
-//             for (int O = 0; O < K; ++O) {
-//                 I.at<double>(M, N + (W * O)) = Z[O];
-//             }
-//         }
-//     }
-
-//     I.convertTo(I, CV_8UC1);
-//     imwrite("Message_new.jpg", I);
-
-//     std::cout << "-- Message Successfully Recovered" << std::endl;
-
-//     return I;
-// }

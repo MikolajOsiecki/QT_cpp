@@ -23,16 +23,19 @@ void clear_directory(const std::filesystem::path& dir_path) {
         }
     }
 
-    std::cout << "Directory cleared: " << dir_path << std::endl;
+    // std::cout << "Directory cleared: " << dir_path << std::endl;
 }
 
 
 int main(int argc, char *argv[])
 {
-    std::filesystem::path KEYS_CPP = "KEYS_CPP";
-    std::filesystem::path DECOMPOSED_SHADOWS = "DECOMPOSED_SHADOWS";
-    clear_directory(KEYS_CPP);
-    clear_directory(DECOMPOSED_SHADOWS);
+    // std::filesystem::path KEYS_CPP = "KEYS_CPP";
+    // std::filesystem::path DECOMPOSED_SHADOWS = "DECOMPOSED_SHADOWS";
+    // clear_directory(KEYS_CPP);
+    // clear_directory(DECOMPOSED_SHADOWS);
+
+    // std::cout << "Maximum value of int: " << std::numeric_limits<int>::max() << std::endl;
+    // std::cout << "Maximum value of long long: " << std::numeric_limits<long long>::max() << std::endl;
 
     QApplication a(argc, argv);
     MainWindow w;

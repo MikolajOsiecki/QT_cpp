@@ -28,6 +28,7 @@ std::vector<Shadow> copyShadowsWithNumber(const std::vector<Shadow>& shadows, in
 std::vector<Shadow> copyShadowsWithSliceNumber(const std::vector<Shadow>& shadows, int specifiedNumber);
 std::vector<Shadow> copyEssentialShadows (const std::vector<Shadow>& shadows, bool returnEssential);
 cv::Mat decodeLiuYang (const std::vector<Shadow>& shadows, int essentialThreshold, int essentialNumber, int shadowsThreshold, int shadowsAmount);
+bool LinYangValueCheck(int essentialThreshold, int essentialNumber, int shadowsThreshold, int shadowsAmount);
 
 class ImageViewer : public QWidget
 {
