@@ -133,6 +133,11 @@
     <layout class="QHBoxLayout" name="ShadowsListGroup">
      <item>
       <widget class="QListWidget" name="listGeneratedSh">
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::ExtendedSelection</enum>
        </property>
@@ -180,6 +185,11 @@
      </item>
      <item>
       <widget class="QListWidget" name="listSelectedSh">
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::ExtendedSelection</enum>
        </property>

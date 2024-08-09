@@ -137,6 +137,8 @@ void MainWindow::on_btnGenerateShadows_clicked()
     bool ok4 = false;
     essentialThreshold = EssentialThreshold.toInt(&ok4);
     bool usePadding = ui->checkBoxCropPadImage->isChecked();
+    bool LinYangValueOK = LinYangValueCheck(essentialThreshold, essentialNumber, shadowsThreshold, shadowsAmount);
+
 
     if (loadedImage.empty()) {
         QMessageBox::warning(this, "Error", "No image loaded or image is empty.");
@@ -215,28 +217,29 @@ void MainWindow::on_btnGenerateShadows_clicked()
             // 2. for each k-t temp shadow Wj (j=s+1,....,s+k-t) generate n subshadows wj,1 .....wj,n using ThienLin (k,n)
             // 3. for i=1,....,s essenital shadows Si are Si = Wi || ws+1,i || .... || ws+k-t,i (subshadow i form each of the k-t subsets of temp shadows)
             //    for i = s+1, .... n normal shadows Si are Si =ws+1,i || .... || ws+k-t,i (same as before but without main temp shadow)
+
             if (ok && ok2 && ok3 && ok4
                 && shadowsAmount > 0 && shadowsThreshold >= 1 && shadowsAmount >= shadowsThreshold
                 && essentialNumber > 0  && essentialThreshold >= 1 && essentialNumber >= essentialThreshold
-                && essentialNumber <= shadowsAmount) {
+                && essentialNumber <= shadowsAmount && LinYangValueOK) {
 
 
                 ///////////////// STEP 1 /////////////////////////
                 int sktAmount = essentialNumber + shadowsThreshold - essentialThreshold;
                 int sktWangLingAmount = 2*sktAmount - shadowsThreshold;
-                std::cout << "sktAmount: " << sktAmount << std::endl;
-                std::cout << "sktWangLingAmount: " << sktWangLingAmount << std::endl;
+                // std::cout << "sktAmount: " << sktAmount << std::endl;
+                // std::cout << "sktWangLingAmount: " << sktWangLingAmount << std::endl;
 
                 std::vector<cv::Mat> slices = sliceExtremeImageVertically(loadedImage, sktAmount, sktWangLingAmount, shadowsThreshold, usePadding);
-                std::cout << "slices Amount: " << slices.size() << std::endl;
+                // std::cout << "slices Amount: " << slices.size() << std::endl;
                 std::vector<Shadow> allTempShadows;
 
                 for (int i = 0; i < slices.size(); ++i) {
                     std::vector<Shadow> sliceShadows = generateShadowsTL(slices[i], sktAmount, sktWangLingAmount, i + 1);
-                    std::cout << "slice i size: " << slices[i].size() << std::endl;
-                    std::cout << "sliceShadows size: " << sliceShadows[0].image.size() << std::endl;
+                    // std::cout << "slice i size: " << slices[i].size() << std::endl;
+                    // std::cout << "sliceShadows size: " << sliceShadows[0].image.size() << std::endl;
 
-                    std::cout << "sliceShadows Amount: " << sliceShadows.size() << std::endl;
+                    // std::cout << "sliceShadows Amount: " << sliceShadows.size() << std::endl;
 
                     // int k = 1;
                     // for (const auto& shadow : sliceShadows) {
@@ -260,17 +263,18 @@ void MainWindow::on_btnGenerateShadows_clicked()
                 std::vector<Shadow> temporaryShadows = composeShadows(allTempShadows, sktAmount, shadowsThreshold);
                 // globaltemporaryShadows = temporaryShadows;
                 globalTempShadowSize = temporaryShadows[0].image.cols;      // take whatever col number, can be first
-                for (const auto& shadow : temporaryShadows) {
-                    // std::string windowName = cv::format("temporaryShadows org %d", m);
-                    // cv::imshow(windowName, shadow.image);
-                    // m++;
-                    std::string fname = "KEYS_CPP/CONSTR_" + std::to_string(shadow.number) + "_SL_" + std::to_string(shadow.sliceNumber) + ".bmp";
-                    cv::imwrite(fname, shadow.image);
-                }
+                // for (const auto& shadow : temporaryShadows) {
+                //     // std::string windowName = cv::format("temporaryShadows org %d", m);
+                //     // cv::imshow(windowName, shadow.image);
+                //     // m++;
+                //     std::string fname = "KEYS_CPP/CONSTR_" + std::to_string(shadow.number) + "_SL_" + std::to_string(shadow.sliceNumber) + ".bmp";
+                //     cv::imwrite(fname, shadow.image);
+                // }
                 // std::cout << "composedShadows size: " << composedShadows.size() << std::endl;
 
                 ///////////////// STEP 2 ////////////////////////
                 std::vector<Shadow> allSubShadows;
+                // std::cout << "Generating SubsHadows " <<  std::endl;
                 for(int i = essentialNumber + 1; i <=sktAmount; i++){
                     // iterator i could be without +1 but this way it is same as in original article (there it is s+1)
                     std::vector<Shadow> subShadows = generateShadowsTL(temporaryShadows[i-1].image, shadowsThreshold, shadowsAmount, i);
@@ -292,12 +296,12 @@ void MainWindow::on_btnGenerateShadows_clicked()
                 for(int i = 0; i < essentialNumber; i++){
                     std::vector<cv::Mat> essentialShadowComponents;
                     essentialShadowComponents.push_back(temporaryShadows[i].image);
-                    std::cout << "temporaryShadows size: " << temporaryShadows[i].image.size() << std::endl;
+                    // std::cout << "temporaryShadows size: " << temporaryShadows[i].image.size() << std::endl;
 
                     std::vector<Shadow> selectedShadowNumber = copyShadowsWithNumber(allSubShadows, i+1);
 
                     for (const auto& shadow : selectedShadowNumber) {
-                        std::cout << "selectedShadowNumber number: " << shadow.number << " selectedShadowNumber sliceNumber: " << shadow.sliceNumber << std::endl;
+                        // std::cout << "selectedShadowNumber number: " << shadow.number << " selectedShadowNumber sliceNumber: " << shadow.sliceNumber << std::endl;
                         essentialShadowComponents.push_back(shadow.image);
                         // std::cout << "essentialShadowComponents size: " << shadow.image.size() << std::endl;
 
@@ -306,7 +310,7 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     // std::cout << "===================== " << std::endl;
 
                     cv::Mat essentialShadow = mergeSubImages(essentialShadowComponents);
-                    std::cout << "essentialShadow size: " << essentialShadow.size() << std::endl;
+                    // std::cout << "essentialShadow size: " << essentialShadow.size() << std::endl;
                     generatedShadows.push_back({essentialShadow, true, "", i+1, -1});
                 }
 
@@ -318,15 +322,23 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     std::vector<Shadow> selectedShadowNumber = copyShadowsWithNumber(allSubShadows, i+1);
 
                     for (const auto& shadow : selectedShadowNumber) {
-                        std::cout << "selectedShadowNumber nromal number: " << shadow.number << " selectedShadowNumber nromal sliceNumber: " << shadow.sliceNumber << std::endl;
+                        // std::cout << "selectedShadowNumber nromal number: " << shadow.number << " selectedShadowNumber nromal sliceNumber: " << shadow.sliceNumber << std::endl;
                         normalShadowComponents.push_back(shadow.image);
-                        std::cout << "normalShadowComponents size: " << shadow.image.size() << std::endl;
+                        // std::cout << "normalShadowComponents size: " << shadow.image.size() << std::endl;
                     }
 
                     cv::Mat normalShadow = mergeSubImages(normalShadowComponents);
-                    std::cout << "normalShadow size: " << normalShadow.size() << std::endl;
+                    // std::cout << "normalShadow size: " << normalShadow.size() << std::endl;
                     generatedShadows.push_back({normalShadow, false, "", i+1, -1});
                 }
+
+                // for (const auto& shadow : generatedShadows) {
+                //     // std::string windowName = cv::format("temporaryShadows org %d", m);
+                //     // cv::imshow(windowName, shadow.image);
+                //     // m++;
+                //     std::string fname = "KEYS_CPP/GEN_" + std::to_string(shadow.number) + "_SL_" + std::to_string(shadow.sliceNumber) + ".bmp";
+                //     cv::imwrite(fname, shadow.image);
+                // }
 
                 // generatedShadows.insert(generatedShadows.end(), allSubShadows.begin(), allSubShadows.end());
                 convertShadowsToStr(generatedShadows);
@@ -342,6 +354,8 @@ void MainWindow::on_btnGenerateShadows_clicked()
                     ui->listGeneratedSh->addItem(newItem);
                 }
 
+            } else if (!LinYangValueOK) {
+                QMessageBox::warning(this, "Error", "Input values must fulfill t,s,k,n scheme input equation (see About Schemes)!");
             } else {
                 QMessageBox::warning(this, "Error", "Invalid parameters!");
             }
@@ -589,6 +603,13 @@ void MainWindow::on_actionAbout_Schemes_triggered()
     "<b>k</b> - total threshold value"
     "<br>"
     "<b>n</b> - total shadow amount value"
+    "<br>"
+    "Input values must fulfill these equations:"
+        "<ul>"
+        "<li><i>t &le; s &le; n</i></li>"
+        "<li><i>t &lt; k &le; n</i></li>"
+        "<li><i>k + s &le; n + t</i></li>"
+        "</ul>"
     );
 }
 

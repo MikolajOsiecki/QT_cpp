@@ -166,7 +166,7 @@ cv::Mat smartPadAndCrop(const cv::Mat& img, int X, int sktWangLingAmount, int sh
         adjustedImg = img(cv::Rect(0, 0, newWidth, img.rows)).clone();
         // Failsafe mechanism: Switch to padding if newWidth is less than 90% of original width
         if (newWidth < 0.9 * originalWidth) {
-            std::cout << "Failsafe, width is too small!!! newWidth: " << newWidth << std::endl;
+            // std::cout << "Failsafe, width is too small!!! newWidth: " << newWidth << std::endl;
             newWidth = originalWidth;
             while (newWidth % X != 0 || (newWidth / X) % X != 0 || ((newWidth / X) / X) * sktWangLingAmount % shadowsThreshold != 0) {
                 newWidth++;
@@ -175,7 +175,7 @@ cv::Mat smartPadAndCrop(const cv::Mat& img, int X, int sktWangLingAmount, int sh
             img.copyTo(adjustedImg(cv::Rect(0, 0, img.cols, img.rows)));
         }
     }
-    std::cout << "newWidth: " << newWidth << std::endl;
+    // std::cout << "newWidth: " << newWidth << std::endl;
 
 
     // // Adjust the image dimensions based on newWidth
@@ -241,8 +241,8 @@ std::vector<cv::Mat> sliceImageVertically(const cv::Mat& image, int n, bool useP
         cv::Mat slice = processedImage(sliceRegion);
         slices.push_back(slice);
 
-        std::string fname = "KEYS_CPP/I" + std::to_string(i + 1) + ".bmp";
-        cv::imwrite(fname, slice);
+        // std::string fname = "KEYS_CPP/I" + std::to_string(i + 1) + ".bmp";
+        // cv::imwrite(fname, slice);
     }
 
     return slices;
@@ -555,7 +555,7 @@ cv::Mat decodeLiuYang (const std::vector<Shadow>& shadows, int essentialThreshol
     std::vector<Shadow> extractedAllTempShadow;
     std::vector<Shadow> extractedAllSubTempShadow;
 
-    std::cout << "Partitioning "  << std::endl;
+    // std::cout << "Partitioning "  << std::endl;
     for(const auto& shadow : shadows){
         if(shadow.isEssential == true){
             // std::cout << "Slicing "  << std::endl;
@@ -573,8 +573,8 @@ cv::Mat decodeLiuYang (const std::vector<Shadow>& shadows, int essentialThreshol
             cv::Mat extractedSubTempShadow = extractAllSubTempShadowFromEssentialRight(shadow.image, globalTempShadowSize);
             std::vector<cv::Mat> slicedSubTempShadows = sliceImageVertically(extractedSubTempShadow, (shadowsThreshold  - essentialThreshold));
             for(int i = 0; i < slicedSubTempShadows.size(); i++){
-                std::string windowName = cv::format("slicedSubTempShadows %d", i);
-                cv::imshow(windowName, slicedSubTempShadows[i]);
+                // std::string windowName = cv::format("slicedSubTempShadows %d", i);
+                // cv::imshow(windowName, slicedSubTempShadows[i]);
                 int sliceNumber = -1;    //dont even ask why, if i knew why them this wouldnt be here
                 if (shadowsThreshold == essentialNumber){
                     sliceNumber = (shadowsThreshold  - essentialThreshold + 1 + i) +1;
@@ -604,48 +604,48 @@ cv::Mat decodeLiuYang (const std::vector<Shadow>& shadows, int essentialThreshol
     }
     // int k = 1;
     // // std::cout << "slcies size= "<< slices.size()  << std::endl;
-    for(const auto& shadow : extractedAllSubTempShadow){
-        std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
-        std::string fname = "KEYS_CPP/SUBTEMP_" + std::to_string(shadow.number) + "_SL_" + std::to_string(shadow.sliceNumber) + ".bmp";
-        cv::imwrite(fname, shadow.image);
-        // std::string windowName = cv::format("SUBTEMP %d", shadow.number);
-        // cv::imshow(windowName, shadow.image);
-        // k++;
-    }
+    // for(const auto& shadow : extractedAllSubTempShadow){
+    //     std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
+    //     std::string fname = "KEYS_CPP/SUBTEMP_" + std::to_string(shadow.number) + "_SL_" + std::to_string(shadow.sliceNumber) + ".bmp";
+    //     cv::imwrite(fname, shadow.image);
+    //     // std::string windowName = cv::format("SUBTEMP %d", shadow.number);
+    //     // cv::imshow(windowName, shadow.image);
+    //     // k++;
+    // }
 
     // int m = 1;
     // // std::cout << "slcies size= "<< slices.size()  << std::endl;
-    for(const auto& shadow : extractedAllTempShadow){
-        std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
-        std::string fname = "KEYS_CPP/TEMP_" + std::to_string(shadow.number) + "_SL_" + std::to_string(shadow.sliceNumber) + ".bmp";
-        cv::imwrite(fname, shadow.image);
-    //     std::string windowName = cv::format("TEMP %d", m);
-    //     cv::imshow(windowName, shadow.image);
-    //     m++;
-    }
+    // for(const auto& shadow : extractedAllTempShadow){
+    //     std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
+    //     std::string fname = "KEYS_CPP/TEMP_" + std::to_string(shadow.number) + "_SL_" + std::to_string(shadow.sliceNumber) + ".bmp";
+    //     cv::imwrite(fname, shadow.image);
+    // //     std::string windowName = cv::format("TEMP %d", m);
+    // //     cv::imshow(windowName, shadow.image);
+    // //     m++;
+    // }
     std::vector<Shadow> copiedPartitions;
     std::vector<Shadow> wanglinPartitions;
     // return result;
 
     // again, dont even ask why
     if (shadowsThreshold == essentialNumber){
-        std::cout << "Override" << std::endl;
+        // std::cout << "Override" << std::endl;
         for (int i = essentialNumber +1; i < (essentialNumber + shadowsThreshold - essentialThreshold +1); i++){
-            std::cout << "(shadowsThreshold - essentialThreshold +1): " << (shadowsThreshold - essentialThreshold +1)<< " (essentialNumber + shadowsThreshold - essentialThreshold +1): " << (essentialNumber + shadowsThreshold - essentialThreshold +1) << std::endl;
-            std::cout << "i: " << i << std::endl;
+            // std::cout << "(shadowsThreshold - essentialThreshold +1): " << (shadowsThreshold - essentialThreshold +1)<< " (essentialNumber + shadowsThreshold - essentialThreshold +1): " << (essentialNumber + shadowsThreshold - essentialThreshold +1) << std::endl;
+            // std::cout << "i: " << i << std::endl;
 
             copiedPartitions.clear();
             copiedPartitions = copyShadowsWithSliceNumber(extractedAllSubTempShadow, i);
-            std::cout << "copiedPartitions amount: " << copiedPartitions.size() << std::endl;
-            for(const auto& shadow : copiedPartitions){
-                std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
-            }
+            // std::cout << "copiedPartitions amount: " << copiedPartitions.size() << std::endl;
+            // for(const auto& shadow : copiedPartitions){
+                // std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
+            // }
 
             cv::Mat reconstructedPartition = decodeShadowsTL(copiedPartitions, shadowsThreshold);
             // decodedPartitions.push_back(reconstructedPartition);
             wanglinPartitions.push_back({reconstructedPartition, false, "", i, -1});
-            std::string fname = "KEYS_CPP/RECON_" + std::to_string(i) + "_SL_" + std::to_string(0) + ".bmp";
-            cv::imwrite(fname, reconstructedPartition);
+            // std::string fname = "KEYS_CPP/RECON_" + std::to_string(i) + "_SL_" + std::to_string(0) + ".bmp";
+            // cv::imwrite(fname, reconstructedPartition);
 
             // std::cout << "reconstructedPartition size: " << reconstructedPartition.cols << "x" << reconstructedPartition.rows << std::endl;
             // std::string windowName = cv::format("reconstructedPartition %d", i);
@@ -653,23 +653,23 @@ cv::Mat decodeLiuYang (const std::vector<Shadow>& shadows, int essentialThreshol
         }
     }
     else {
-        std::cout << "No Override" << std::endl;
+        // std::cout << "No Override" << std::endl;
         for (int i = essentialNumber +1; i < (essentialNumber + shadowsThreshold - essentialThreshold +1); i++){
-            std::cout << "(shadowsThreshold - essentialThreshold +1): " << (shadowsThreshold - essentialThreshold +1)<< " (essentialNumber + shadowsThreshold - essentialThreshold +1): " << (essentialNumber + shadowsThreshold - essentialThreshold +1) << std::endl;
-            std::cout << "i: " << i << std::endl;
+            // std::cout << "(shadowsThreshold - essentialThreshold +1): " << (shadowsThreshold - essentialThreshold +1)<< " (essentialNumber + shadowsThreshold - essentialThreshold +1): " << (essentialNumber + shadowsThreshold - essentialThreshold +1) << std::endl;
+            // std::cout << "i: " << i << std::endl;
 
             copiedPartitions.clear();
             copiedPartitions = copyShadowsWithSliceNumber(extractedAllSubTempShadow, i);
-            std::cout << "copiedPartitions amount: " << copiedPartitions.size() << std::endl;
-            for(const auto& shadow : copiedPartitions){
-                std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
-            }
+            // std::cout << "copiedPartitions amount: " << copiedPartitions.size() << std::endl;
+            // for(const auto& shadow : copiedPartitions){
+                // std::cout << "shadow number=  "  << shadow.number << " shadow slice: "<< shadow.sliceNumber << std::endl;
+            // }
 
             cv::Mat reconstructedPartition = decodeShadowsTL(copiedPartitions, shadowsThreshold);
             // decodedPartitions.push_back(reconstructedPartition);
             wanglinPartitions.push_back({reconstructedPartition, false, "", i, -1});
-            std::string fname = "KEYS_CPP/RECON_" + std::to_string(i) + "_SL_" + std::to_string(0) + ".bmp";
-            cv::imwrite(fname, reconstructedPartition);
+            // std::string fname = "KEYS_CPP/RECON_" + std::to_string(i) + "_SL_" + std::to_string(0) + ".bmp";
+            // cv::imwrite(fname, reconstructedPartition);
 
             // std::cout << "reconstructedPartition size: " << reconstructedPartition.cols << "x" << reconstructedPartition.rows << std::endl;
             // std::string windowName = cv::format("reconstructedPartition %d", i);
@@ -714,16 +714,16 @@ cv::Mat decodeLiuYang (const std::vector<Shadow>& shadows, int essentialThreshol
 
         cv::Mat reconstructedPartition = decodeShadowsTL(copiedPartitions, sktAmount);
         decodedPartitions.push_back(reconstructedPartition);
-        std::string fname = "DECOMPOSED_SHADOWS/RECON_" + std::to_string(i) + "_SL_" + std::to_string(0) + ".bmp";
-        cv::imwrite(fname, reconstructedPartition);
+        // std::string fname = "DECOMPOSED_SHADOWS/RECON_" + std::to_string(i) + "_SL_" + std::to_string(0) + ".bmp";
+        // cv::imwrite(fname, reconstructedPartition);
 
         // if (i == 3){
-        for (const auto& shadow : copiedPartitions) {
-            std::cout << "Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
-            // std::string fname = "DECOMPOSED_SHADOWS/DS" + std::to_string(shadow.number) + "_" + std::to_string(shadow.sliceNumber) + ".bmp";
-            // std::string windowName = cv::format("Partition %d", k);
-        }
-        std::cout << "======================== " << std::endl;
+        // for (const auto& shadow : copiedPartitions) {
+        //     std::cout << "Shadow Number: " << shadow.number << ", Slice Number: " << shadow.sliceNumber << std::endl;
+        //     // std::string fname = "DECOMPOSED_SHADOWS/DS" + std::to_string(shadow.number) + "_" + std::to_string(shadow.sliceNumber) + ".bmp";
+        //     // std::string windowName = cv::format("Partition %d", k);
+        // }
+        // std::cout << "======================== " << std::endl;
 
         // k+=1;
         // cv::imshow(windowName, shadow.image);
@@ -737,16 +737,37 @@ cv::Mat decodeLiuYang (const std::vector<Shadow>& shadows, int essentialThreshol
         // }
     }
 
-    int p =1;
-    for(const auto& img : decodedPartitions){
-        // std::cout << "decodedPartitions number=  "  << shadow.number << " decodedPartitions slice: "<< shadow.sliceNumber << std::endl;
-        std::string windowName = cv::format("decodedPartitions %d", p);
-        cv::imshow(windowName, img);
-        p++;
-    }
+    // int p =1;
+    // for(const auto& img : decodedPartitions){
+    //     // std::cout << "decodedPartitions number=  "  << shadow.number << " decodedPartitions slice: "<< shadow.sliceNumber << std::endl;
+    //     std::string windowName = cv::format("decodedPartitions %d", p);
+    //     cv::imshow(windowName, img);
+    //     p++;
+    // }
 
     cv::Mat reconstructed = mergeSubImages(decodedPartitions);
     // cv::imshow("reconstructed",reconstructed);
 
     return reconstructed;
+}
+
+
+bool LinYangValueCheck(int essentialThreshold = 0, int essentialNumber =0 , int shadowsThreshold = 0, int shadowsAmount = 0){
+    // std::cout << "essentialThreshold: " << essentialThreshold << ", essentialNumber: " << essentialNumber << ", shadowsThreshold: " << shadowsThreshold << ", shadowsAmount: " << shadowsAmount << std::endl;
+    if (essentialThreshold < 1 && essentialNumber < 1 && shadowsThreshold < 1 && shadowsAmount < 1 ){
+        return false;
+    }
+
+    if ( !(essentialThreshold <= essentialNumber && essentialNumber <= shadowsAmount) ){
+        return false;
+    }
+    else if ( !(essentialThreshold < shadowsThreshold && shadowsThreshold <= shadowsAmount) ){
+        return false;
+    }
+    else if ( !(shadowsThreshold+essentialNumber <= shadowsAmount+essentialThreshold) ){
+        return false;
+    }
+    else {
+        return true;
+    }
 }
